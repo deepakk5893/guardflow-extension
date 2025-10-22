@@ -70,18 +70,18 @@ GuardFlow intercepts these messages before submission and warns you with a clear
 ## Screenshots
 
 ### Stats Box
-docs/screenshots/stats.jpg
+![GuardFlow Stats Box](docs/screenshots/stats.jpg)
 
 ### Secret Detection Warning
-docs/screenshots/chatgpt.jpg
-docs/screenshots/perplexity.jpg
-docs/screenshots/groq.jpg
+![ChatGPT Detection](docs/screenshots/chatgpt.jpg)
+![Perplexity Detection](docs/screenshots/perplexity.jpg)
+![Groq Detection](docs/screenshots/groq.jpg)
 
 ### Multiple Secrets Detected
-docs/screenshots/claude.jpg
+![Claude Multiple Secrets](docs/screenshots/claude.jpg)
 
 ### Edit & Review Flow
-docs/screenshots/gemini.jpg
+![Gemini Edit Flow](docs/screenshots/gemini.jpg)
 
 ---
 
