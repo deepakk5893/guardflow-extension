@@ -69,14 +69,19 @@ GuardFlow intercepts these messages before submission and warns you with a clear
 
 ## Screenshots
 
+### Stats Box
+docs/screenshots/stats.png
+
 ### Secret Detection Warning
-[Screenshot will be added here - see "Adding Screenshots" section below]
+docs/screenshots/chatgpt.png
+docs/screenshots/perplexity.png
+docs/screenshots/groq.png
 
 ### Multiple Secrets Detected
-[Screenshot will be added here]
+docs/screenshots/claude.png
 
 ### Edit & Review Flow
-[Screenshot will be added here]
+docs/screenshots/gemini.png
 
 ---
 
