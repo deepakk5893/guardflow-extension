@@ -27,7 +27,31 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
     submitButton: 'button[data-testid="send-button"], button[data-testid="fruitjuice-send-button"], button[aria-label*="Send"]',
     getMessageText: (element: HTMLElement) => {
       // ChatGPT uses contenteditable div (ProseMirror), not textarea
-      return element.innerText || element.textContent || '';
+      // Try innerText first (includes line breaks), then textContent, then get all text recursively
+      let text = element.innerText || element.textContent || '';
+
+      // If still empty, try to get text from all child nodes
+      if (!text && element.childNodes.length > 0) {
+        const textParts: string[] = [];
+        element.childNodes.forEach((node) => {
+          if (node.nodeType === 3) { // Text node
+            textParts.push(node.textContent || '');
+          } else if (node.nodeType === 1) { // Element node
+            textParts.push((node as HTMLElement).innerText || (node as HTMLElement).textContent || '');
+          }
+        });
+        text = textParts.join('');
+      }
+
+      console.log('[GuardFlow] ChatGPT text extraction:', {
+        elementText: element.innerText,
+        textContent: element.textContent,
+        childCount: element.childNodes.length,
+        finalText: text,
+        finalLength: text.length,
+      });
+
+      return text;
     },
     isReady: () => {
       return !!document.querySelector('#prompt-textarea');
@@ -40,7 +64,30 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
     submitButton: 'button[data-testid="send-button"], button[data-testid="fruitjuice-send-button"], button[aria-label*="Send"]',
     getMessageText: (element: HTMLElement) => {
       // ChatGPT uses contenteditable div (ProseMirror), not textarea
-      return element.innerText || element.textContent || '';
+      let text = element.innerText || element.textContent || '';
+
+      // If still empty, try to get text from all child nodes
+      if (!text && element.childNodes.length > 0) {
+        const textParts: string[] = [];
+        element.childNodes.forEach((node) => {
+          if (node.nodeType === 3) { // Text node
+            textParts.push(node.textContent || '');
+          } else if (node.nodeType === 1) { // Element node
+            textParts.push((node as HTMLElement).innerText || (node as HTMLElement).textContent || '');
+          }
+        });
+        text = textParts.join('');
+      }
+
+      console.log('[GuardFlow] ChatGPT text extraction:', {
+        elementText: element.innerText,
+        textContent: element.textContent,
+        childCount: element.childNodes.length,
+        finalText: text,
+        finalLength: text.length,
+      });
+
+      return text;
     },
     isReady: () => {
       return !!document.querySelector('#prompt-textarea');
