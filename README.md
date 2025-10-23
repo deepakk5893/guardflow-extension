@@ -4,6 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web_Store-brightgreen)](https://chrome.google.com/webstore)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox-Add--ons-FF7139)](https://addons.mozilla.org/)
 [![GitHub issues](https://img.shields.io/github/issues/deepakk5893/guardflow-extension)](https://github.com/deepakk5893/guardflow-extension/issues)
 [![GitHub stars](https://img.shields.io/github/stars/deepakk5893/guardflow-extension)](https://github.com/deepakk5893/guardflow-extension)
 
@@ -152,6 +153,34 @@ Secret detected?
 
 ---
 
+## Multi-Browser Support
+
+GuardFlow supports multiple browsers with **shared code**:
+
+| Browser | Status | Install |
+|---------|--------|---------|
+| **Chrome** | ✅ Available | [Chrome Web Store](#installation) |
+| **Firefox** | ✅ Available | [Firefox Add-ons](#installation) |
+| **Safari** | 🔜 Planned | Coming soon |
+| **Edge** | 🔜 Planned | Coming soon |
+
+### Build for Different Browsers
+
+```bash
+# Build for Chrome
+npm run build:chrome
+
+# Build for Firefox
+npm run build:firefox
+
+# Build both
+npm run build:all
+```
+
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed build instructions.
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -165,13 +194,24 @@ Secret detected?
 npm install
 
 # Start development mode (watch for changes)
-npm run dev
+# For Chrome
+npm run dev:chrome
+
+# For Firefox
+npm run dev:firefox
 
 # Run tests
 npm test
 
 # Build for production
-npm run build
+# For Chrome only
+npm run build:chrome
+
+# For Firefox only
+npm run build:firefox
+
+# Build both
+npm run build:all
 
 # Package for distribution
 npm run package
@@ -181,8 +221,8 @@ npm run package
 
 ```
 guardflow-extension/
-├── src/
-│   ├── content/                 # Content scripts (run on AI chat pages)
+├── src/                         # SHARED CODE (all browsers)
+│   ├── content/
 │   │   ├── content.ts          # Main interception logic
 │   │   ├── site-configs.ts     # Site-specific selectors
 │   │   └── dialogs/            # Warning dialog components
@@ -191,11 +231,24 @@ guardflow-extension/
 │   │   └── secretDetection.test.ts  # Jest tests (39 passing)
 │   ├── popup/                  # Extension popup UI
 │   └── background/             # Service worker
-├── manifest.json               # Extension manifest (V3)
+│
+├── browsers/                    # BROWSER-SPECIFIC CONFIGS
+│   ├── chrome/
+│   │   ├── manifest.json       # Chrome Manifest V3
+│   │   ├── vite.config.ts
+│   │   ├── tsconfig.json
+│   │   └── public/
+│   │
+│   └── firefox/
+│       ├── manifest.json       # Firefox Manifest V2
+│       ├── vite.config.ts
+│       ├── tsconfig.json
+│       └── public/
+│
 ├── package.json
-├── tsconfig.json
 ├── jest.config.js
-└── vite.config.ts
+├── BUILD_GUIDE.md             # Multi-browser build guide
+└── README.md
 ```
 
 ### Technology Stack

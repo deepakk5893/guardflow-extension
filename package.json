@@ -4,11 +4,17 @@
   "description": "Prevent accidental secret leaks to ChatGPT, Claude, and other AI services",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch --mode development",
-    "build": "tsc && vite build",
+    "dev:chrome": "cd browsers/chrome && vite build --watch --mode development",
+    "dev:firefox": "cd browsers/firefox && vite build --watch --mode development",
+    "build:chrome": "cd browsers/chrome && tsc && vite build",
+    "build:firefox": "cd browsers/firefox && tsc && vite build",
+    "build:all": "npm run build:chrome && npm run build:firefox",
+    "build": "npm run build:chrome",
     "test": "jest",
     "test:watch": "jest --watch",
-    "package": "npm run build && cd dist && zip -r ../guardflow-extension.zip .",
+    "package:chrome": "npm run build:chrome && cd dist-chrome && zip -r ../guardflow-chrome.zip . && cd ..",
+    "package:firefox": "npm run build:firefox && cd dist-firefox && zip -r ../guardflow-firefox.zip . && cd ..",
+    "package": "npm run package:chrome && npm run package:firefox",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

@@ -6,7 +6,7 @@
 ---
 
 ## Short Description (132 characters max for search results)
-Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.
+Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini, PerPlexity and Groq. Free security for developers.
 
 ---
 
