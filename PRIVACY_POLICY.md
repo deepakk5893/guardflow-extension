@@ -1,6 +1,6 @@
 # Privacy Policy - Guardflow Extension
 
-**Last Updated:** October 21, 2025
+**Last Updated:** October 23, 2025
 
 ## Overview
 Guardflow is a free browser extension that detects and prevents accidental secret leaks in AI chat interfaces. We take your privacy seriously.
@@ -45,7 +45,7 @@ Guardflow does not integrate with any third-party services or analytics platform
 We may update this policy occasionally. We'll notify users via extension updates.
 
 ## Contact
-For privacy questions, contact: admin@guardflow.tech
+For privacy questions, contact: deepakk5893@gmail.com
 
 ## Important Note
 This extension is provided as-is for security awareness. Always review your messages for sensitive information before sending to AI services, regardless of this tool's detection capabilities.
