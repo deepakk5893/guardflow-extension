@@ -1,9 +1,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { copyFileSync, mkdirSync } from 'fs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'copy-manifest',
+      apply: 'build',
+      generateBundle() {
+        // Manifest will be copied via writeBundle hook
+      },
+      writeBundle() {
+        const distDir = resolve(__dirname, '../../dist-firefox');
+        const manifestSrc = resolve(__dirname, 'manifest.json');
+        mkdirSync(distDir, { recursive: true });
+        copyFileSync(manifestSrc, resolve(distDir, 'manifest.json'));
+      },
+    },
+  ],
   resolve: {
     alias: {
       '~': resolve(__dirname, '../../src'),

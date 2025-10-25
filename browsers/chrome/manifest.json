@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "description": "Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
   "permissions": [
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
     "https://chat.openai.com/*",

@@ -1,11 +1,10 @@
 {
   "manifest_version": 2,
-  "name": "Guardflow - Secret Detector for AI Chat Security",
+  "name": "GuardFlow - Secret Detector",
   "version": "1.0.0",
   "description": "Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
   "permissions": [
     "storage",
-    "activeTab",
     "https://chat.openai.com/*",
     "https://chatgpt.com/*",
     "https://claude.ai/*",
@@ -32,16 +31,16 @@
   },
   "browser_action": {
     "default_popup": "public/popup.html",
-    "default_title": "Guardflow - Secret Detector",
+    "default_title": "GuardFlow - Secret Detector",
     "default_icons": {
-      "16": "public/icons/icon16.png",
-      "48": "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "icons": {
-    "16": "public/icons/icon16.png",
-    "48": "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }

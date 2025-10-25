@@ -43,14 +43,6 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
         text = textParts.join('');
       }
 
-      console.log('[GuardFlow] ChatGPT text extraction:', {
-        elementText: element.innerText,
-        textContent: element.textContent,
-        childCount: element.childNodes.length,
-        finalText: text,
-        finalLength: text.length,
-      });
-
       return text;
     },
     isReady: () => {
@@ -78,14 +70,6 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
         });
         text = textParts.join('');
       }
-
-      console.log('[GuardFlow] ChatGPT text extraction:', {
-        elementText: element.innerText,
-        textContent: element.textContent,
-        childCount: element.childNodes.length,
-        finalText: text,
-        finalLength: text.length,
-      });
 
       return text;
     },
