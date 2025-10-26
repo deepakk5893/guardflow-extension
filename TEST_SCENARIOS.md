@@ -1,321 +1,309 @@
 # Guardflow Secret Detection - Test Scenarios
 
-Comprehensive test cases for all 53 secret detection patterns.
+Comprehensive, realistic test scenarios for all secret detection patterns.
 
 ---
 
 ## Category 1: AWS Secrets
 
-### AWS Access Key
+### Scenario 1.1: AWS Access Key in Error Log
+I'm getting this error when trying to connect to AWS:
+
 ```
-I'm getting auth errors with my AWS CLI:
+[ERROR] 2025-10-11 10:23:45 - AWS Request failed
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+Region: us-east-1
+Service: s3
+Error: Access Denied
+
+What am I doing wrong?
 ```
 
-### AWS Secret Key (Alternative Format)
-```
-aws_secret_access_key = 'abc123DEF456ghi789JKL012mno345PQR678stu901'
-```
+### Scenario 1.2: AWS Credentials in Python Script
+This script is failing, can you help debug?
 
----
+```python
+import boto3
 
-## Category 2: GitHub & Git Secrets
+# Production credentials
+session = boto3.Session(
+    aws_access_key_id='AKIAJ5EXAMPLE2QWERTYY',
+    aws_secret_access_key='abc123DEF456ghi789JKL012mno345PQR678stu901',
+    region_name='us-west-2'
+)
 
-### GitHub Personal Access Token (PAT)
-```
-My GitHub token: ghp_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8
-```
+s3 = session.client('s3')
+response = s3.list_buckets()
 
-### GitHub OAuth Token
-```
-OAuth token: gho_16C7e42F292c6912E7710c838347Ae178B4a
-```
-
-### GitHub User-to-Server Token
-```
-User token: ghu_1B4a2e77838347a7E420F8c1A1F0b2C3d4E5F6G
-```
-
-### GitHub Server-to-Server Token
-```
-App token: ghs_1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0t
-```
-
-### GitHub Refresh Token
-```
-Refresh token: ghr_1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0t
-```
-
-### GitLab Personal Access Token
-```
-GitLab token: glpat-Xk7Y8Z9a0B1c2D3e4F5g6
-```
-
-### GitHub Fine-Grained Personal Access Token
-```
-GitHub fine-grained: github_pat_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n
+Error: InvalidAccessKeyId
 ```
 
 ---
 
-## Category 3: Private Keys & Authentication
+## Category 2: Database Credentials
 
-### SSH Private Key (PEM Format)
-```
------BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
-...
------END PRIVATE KEY-----
-```
+### Scenario 2.1: PostgreSQL Connection Error
+Hey, I'm getting this error when trying to connect to the database:
 
-### SSH Private Key (RSA Format)
 ```
------BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEA4f5wg5l2hKsTeNem/V41fGnJm6gOdrj8ym3rFkEU/wT8RDtn
-...
------END RSA PRIVATE KEY-----
+Error: Connection failed
+    at Connection.connect (/app/db.js:45)
+    connection string: postgresql://prod_user:kJ8#mP9$xL2@db.prod.company.com:5432/main_db
+    at Database.initialize (/app/server.js:12)
+
+How do I fix this?
 ```
 
-### JWT Token
-```
-Getting 403 error with token:
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+### Scenario 2.2: MongoDB Connection String
+My containers aren't starting. Here's the env output:
+
+```yaml
+$ docker-compose config
+services:
+  backend:
+    environment:
+      DATABASE_URL: mongodb://admin:P@ssw0rd123@mongo:27017/prod
+      REDIS_URL: redis://:myRedisP@ss123@redis:6379
+
+What's wrong with my setup?
 ```
 
-### Basic Auth in URL
-```
-curl -X GET http://admin:P@ssw0rd123@api.example.com/users
-```
+### Scenario 2.3: .env File with Multiple DB Credentials
+I think my environment variables are wrong. Here's my .env:
 
----
+```
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://dbadmin:Tr0ub4dor&3@prod-db.internal:5432/maindb
+REDIS_URL=redis://:c@ch3Passw0rd!@redis.internal:6379
+SESSION_SECRET=this-is-my-super-secret-session-key-2024
 
-## Category 4: API Keys - Cloud Providers
-
-### Google Cloud API Key
-```
-My GCP config:
-apiKey: "AIzaSyBCDEF123456789-abcdefGHIJKLMNOPQRST"
-```
-
-### Google Gemini API Key
-```
-Gemini token: AIzaSyDdVgKwhJ2sdfskhfksjhd12345fsdjfs
-```
-
-### Azure Storage SAS Token
-```
-Storage URL: https://storage.azure.com?sv=2023-01-01&ss=b&srt=sco
-```
-
-### Google OAuth Client Secret
-```
-{
-  "client_id": "123456789.apps.googleusercontent.com",
-  "client_secret": "GOCSPX-abc123def456ghi789jkl012mno"
-}
+Still getting auth errors!
 ```
 
 ---
 
-## Category 5: API Keys - AI/LLM Providers
+## Category 3: Payment & API Keys
 
-### OpenAI API Key (User)
-```
-I'm using this OpenAI key: sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
-```
+### Scenario 3.1: Stripe API Request
+Here's the curl command that's failing:
 
-### OpenAI API Key (Project)
-```
-My project key: sk-proj-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz
-```
+```bash
+curl -X POST https://api.stripe.com/v1/charges \
+  -H "Authorization: Bearer sk_live_51HqB2jKl3m4n5o6p7Q8r9S0t1U2v3W4x5Y6z7A8b9C0d1E2f3" \
+  -d amount=2000 \
+  -d currency=usd
 
-### Anthropic (Claude) API Key
-```
-Claude API: sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabc
+Getting 401 error, any ideas?
 ```
 
-### Groq API Key
-```
-Groq key: gsk_1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p
-```
+### Scenario 3.2: SendGrid Email Configuration
+SendGrid emails aren't going through. Here's my config:
 
-### Hugging Face Token
-```
-HF token: hf_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0
-```
+```javascript
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey('SG.1a2b3c4d5e6f7g8h9i0j.A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2');
 
-### Replicate API Token
-```
-Replicate: r8_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6
-```
+msg = {
+  to: 'user@example.com',
+  from: 'noreply@company.com',
+  subject: 'Test',
+  text: 'Test email'
+};
 
-### Cohere API Key
-```
-Cohere: Cka1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9
-```
+Error: Unauthorized - 401
 
-### Mistral API Key
-```
-Mistral: mistral_sk_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5
-```
-
-### Ollama Token
-```
-ollama_sk_1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p
+What am I missing?
 ```
 
 ---
 
-## Category 6: Database Credentials
+## Category 4: GitHub & Git Tokens
 
-### PostgreSQL Connection String
-```
-connection string: postgresql://prod_user:kJ8#mP9$xL2@db.prod.company.com:5432/main_db
-```
+### Scenario 4.1: GitHub Actions CI/CD Failure
+My CI pipeline is failing with this output:
 
-### MySQL Connection String
 ```
-Database URL: mysql://admin:Tr0ub4dor&3@prod-db.internal:3306/maindb
-```
+Run: npm run deploy
+Deploying to production...
+Using credentials from environment:
+  GITHUB_TOKEN=ghp_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8
+  NPM_TOKEN=npm_1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p
+  SENTRY_AUTH_TOKEN=sntrys_abc123def456ghi789jkl012mno345pqr678
+Error: Deployment failed
 
-### MongoDB Connection String
-```
-MONGO_URL=mongodb://admin:P@ssw0rd123@mongo:27017/prod
-```
-
-### Redis Connection String
-```
-REDIS_URL=redis://:myRedisP@ss123@redis:6379
+Need help debugging this!
 ```
 
----
+### Scenario 4.2: GitHub Fine-Grained PAT
+I'm setting up my repository with a fine-grained token:
 
-## Category 7: DevOps & CI/CD
-
-### Bitbucket App Password
 ```
-bitbucket_app_pass: bitbucket_ABC123DEF456GHI789JKL012
-```
-
-### CircleCI Token
-```
-circleci_abc123def456ghi789jkl012mno345pqr
-```
-
-### Terraform Cloud Token
-```
-token: atlasv1.A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6
-```
-
-### PagerDuty Token
-```
-PDa1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1
+GITHUB_TOKEN=github_pat_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h4i5j6k7l8m9n
 ```
 
 ---
 
-## Category 8: Communication & Messaging
+## Category 5: Communication & Webhooks
 
-### Slack Token
-```
-xoxb-1234567890-1234567890-ABCDEFGHIJKLMNOP
-```
+### Scenario 5.1: Slack Webhook Test
+Testing my notification system but it's not working:
 
-### Slack Webhook
 ```
 POST https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX
-```
+{
+  "text": "Test message"
+}
 
-### Twilio API Key
-```
-SK0123456789ABCDEF0123456789ABCD
-```
+Response: 404 Not Found
 
-### Mailgun API Key
-```
-key-0123456789abcdef0123456789abcd
+Is my webhook URL wrong?
 ```
 
 ---
 
-## Category 9: Infrastructure & Hosting
+## Category 6: Cloud Provider APIs
 
-### Stripe API Key
-```
-sk_live_51HqB2jKl3m4n5o6p7Q8r9S0t1U2v3W4x5Y6z7A8b9C0d1E2f3
-```
+### Scenario 6.1: Firebase Configuration
+My Firebase app won't initialize. Here's my config:
 
-### SendGrid API Key
-```
-SG.1a2b3c4d5e6f7g8h9i0j.A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2
-```
+```javascript
+const firebaseConfig = {
+  apiKey: "AIzaSyBCDEF123456789-abcdefGHIJKLMNOPQRST",
+  authDomain: "myapp-prod.firebaseapp.com",
+  databaseURL: "https://myapp-prod.firebaseio.com",
+  projectId: "myapp-prod",
+  storageBucket: "myapp-prod.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef123456"
+};
 
-### NPM Token
-```
-npm_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6
-```
-
-### Cloudflare API Token
-```
-CF1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q
-```
-
-### Heroku API Key
-```
-heroku_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0
-```
-
-### DigitalOcean Token
-```
-dop_v1_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6a7b8c9d0e1f2g3h
-```
-
-### Docker Registry Personal Access Token
-```
-Docker PAT: dckr_pat_A1B2C3D4E5F6G7H8I9J0K1L2
+Getting "Permission denied" error
 ```
 
 ---
 
-## Category 10: Web3 & Blockchain
+## Category 7: Authentication Tokens
 
-### Ethereum Private Key
-```
-0x1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7a8b9c0d1e2f3g
-```
+### Scenario 7.1: JWT Token in Browser Console
+Getting authentication errors. Here's what I see in console:
 
-### Infura API Key
-```
-https://mainnet.infura.io/v3/0123456789ABCDEF0123456789ABCDEF
+```javascript
+localStorage.getItem('auth_token'):
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+API endpoint: /api/v1/users
+Response: 403 Forbidden
+
+Why is my token being rejected?
 ```
 
 ---
 
-## Category 11: Generic Fallbacks
+## Category 8: AI/LLM Provider Keys
 
-### Generic API Key Pattern
+### Scenario 8.1: OpenAI API Integration Issues
+I'm trying to integrate OpenAI but getting errors:
+
+```javascript
+const openai = new OpenAI({
+  apiKey: "sk-proj-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+});
+
+const response = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello" }]
+});
+
+Error: 401 Authentication failed
+
+Any ideas?
+```
+
+### Scenario 8.2: Anthropic (Claude) API Setup
+I'm using Claude API:
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(api_key="sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZabc")
+
+response = client.messages.create(
+    model="claude-3-sonnet-20240229",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello Claude!"}]
+)
+
+Error: Invalid authentication credentials
+```
+
+---
+
+## Category 9: Infrastructure & DevOps
+
+### Scenario 9.1: Kubernetes Secrets Debugging
+Trying to debug k8s secrets:
+
+```bash
+kubectl get secret app-secrets -o yaml
+
+data:
+  api-key: c2stbGl2ZV81MUhxQjJqS2wzbTRuNW82cDdROHI5UzB0MVUydjNXNHg1WTZ6N0E4YjlDMGQxRTJmMw==
+
+Decoded: sk-live_51HqB2jKl3m4n5o6p7Q8r9S0t1U2v3W4x5Y6z7A8b9C0d1E2f3
+
+Why isn't this working in my app?
+```
+
+### Scenario 9.2: Environment Variables with Multiple Secrets
+Here's my Docker environment dump:
+
+```
+STRIPE_SECRET_KEY=sk_live_51Hq2jKl3m4n5o6p7Q8r9S0t1U2v3W4x5Y6z7A8B9C0D1E2F3
+SENDGRID_API_KEY=SG.abcdefghijklmnopqrst.ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
+GITHUB_WEBHOOK_SECRET=whsec_1234567890abcdefghijklmnopqrstuvwxyz
+OPENAI_API_KEY=sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
+
+Services aren't authenticating properly!
+```
+
+---
+
+## Category 10: Generic Patterns
+
+### Scenario 10.1: Generic API Key in Config
+I'm having trouble with my API integration:
+
 ```
 api_key = "A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8"
+api_secret = "secret_key_abcd1234efgh5678ijkl9012"
+
+Getting 401 errors on all requests
 ```
 
-### Password Assignment
-```
-password: "MyS3cur3P@ssw0rdH3r3!"
-```
+### Scenario 10.2: Hardcoded Password in Code
+Can someone review this code? I think there's a configuration issue:
 
-### Cloud Provider Generic Pattern
-```
-AWS_SECRET_KEY_PROD=abcdefg123456789
-Azure-API-Token=xyz789
+```python
+config = {
+  username: "admin",
+  password: "MyS3cur3P@ssw0rdH3r3!",
+  host: "db.example.com",
+  port: 5432
+}
+
+Why isn't authentication working?
 ```
 
 ---
 
-## Test Instructions
+## Testing Instructions
 
 ### Manual Testing
-Copy each scenario and paste into ChatGPT, Claude, Gemini, Perplexity, or Groq. You should see a warning dialog.
+1. Copy each scenario and paste it into ChatGPT, Claude, Gemini, Perplexity, or Groq
+2. You should see a "GuardFlow Secret Detector" warning dialog
+3. Test the three options: Cancel, Edit Message, Send Anyway
 
 ### Automated Testing
 Run:
@@ -325,26 +313,52 @@ npm test
 
 This will verify all regex patterns against their test cases.
 
+### Expected Results
+All scenarios should trigger the secret warning dialog with the detected secrets highlighted.
+
+### Test Checklist
+- [ ] AWS Access Key detected
+- [ ] AWS Secret Key detected
+- [ ] Database credentials detected
+- [ ] Stripe key detected
+- [ ] SendGrid key detected
+- [ ] GitHub token detected
+- [ ] NPM token detected
+- [ ] Slack webhook detected
+- [ ] Firebase API key detected
+- [ ] JWT token detected
+- [ ] OpenAI API key detected
+- [ ] Claude API key detected
+- [ ] Generic API key detected
+- [ ] Password patterns detected
+- [ ] Multiple secrets in one message detected
+
 ---
 
-## Expected Results
+## Client Demo Script
 
-All 53 patterns should detect their respective secrets with:
-- ✅ 0% false negatives (catches all real examples)
-- ✅ <1% false positives (minimal noise)
+"Watch what happens when I accidentally paste debugging logs with secrets..."
 
-## Pattern Summary
+[Paste Scenario 2.1 - PostgreSQL Connection Error]
 
-**Total Detection Patterns: 53**
+"See? GuardFlow instantly detects the PostgreSQL password in the connection string and stops me before sending it to the AI. This prevents credential leakage."
 
-- AWS: 2
-- GitHub & Git: 6 (including fine-grained PAT)
-- Private Keys: 4
-- Cloud Providers: 4
-- AI/LLM: 8
-- Databases: 4
-- DevOps & CI/CD: 6
-- Payment & Communication: 5
-- Infrastructure: 6 (including Docker)
-- Generic Patterns: 3
-- Other: 1
+[Show the warning dialog with detected PostgreSQL secret]
+
+"I can edit the message to remove the secret, or if I really know what I'm doing, I can bypass the warning. This protects your developers while still giving them flexibility."
+
+[Demonstrate Edit and Send Anyway buttons]
+
+"Let's try another one with multiple secrets..."
+
+[Paste Scenario 9.2 - Multiple Environment Variables]
+
+"Notice it detected FOUR secrets in this one message:
+- Stripe key (sk_live_...)
+- SendGrid key (SG....)
+- GitHub webhook secret (whsec_...)
+- OpenAI key (sk-...)
+
+GuardFlow catches all of them automatically."
+
+[Show dialog with 4 detected secrets highlighted]
