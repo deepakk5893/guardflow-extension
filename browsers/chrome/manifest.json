@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Guardflow - Secret Detector for AI Chat Security",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
   "permissions": [
     "storage"
