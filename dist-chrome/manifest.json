@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-C_bVZvy8.js"
+        "assets/content.ts-DOdUXkng.js"
       ],
       "matches": [
         "https://chat.openai.com/*",
@@ -60,7 +60,7 @@
         "https://www.perplexity.ai/*"
       ],
       "resources": [
-        "assets/content.ts-C_bVZvy8.js"
+        "assets/content.ts-DOdUXkng.js"
       ],
       "use_dynamic_url": false
     }

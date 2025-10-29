@@ -277,14 +277,7 @@ const SECRET_RULES: SecretRule[] = [
     message: 'Ollama API Token detected',
   },
 
-  // Generic API Keys and Passwords (catch-all patterns)
-  {
-    id: 'generic-api-key',
-    type: 'API Key',
-    pattern: /\b(api[_-]?key|apikey|api[_-]?token|access[_-]?token)[\s:="']*([A-Za-z0-9_\-]{20,})\b/gi,
-    severity: 'warning',
-    message: 'Potential API Key detected',
-  },
+  // NPM Token
   {
     id: 'npm-token',
     type: 'NPM Token',
@@ -416,30 +409,6 @@ const redactSecret = (text: string, index: number, length: number): string => {
 };
 
 /**
- * Check if a potential secret is likely a false positive
- */
-const isFalsePositive = (match: string, rule: SecretRule): boolean => {
-  // Skip common false positives for generic API key pattern
-  if (rule.id === 'generic-api-key') {
-    const lowerMatch = match.toLowerCase();
-    // Common placeholders and examples
-    if (
-      lowerMatch.includes('example') ||
-      lowerMatch.includes('your_') ||
-      lowerMatch.includes('your-') ||
-      lowerMatch.includes('placeholder') ||
-      lowerMatch.includes('xxxxxxx') ||
-      lowerMatch.includes('*******') ||
-      /^[x*]+$/i.test(match)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-};
-
-/**
  * Detect secrets in the given text using regex patterns
  *
  * @param text - The text to scan for secrets
@@ -482,8 +451,8 @@ export async function detectSecrets(text: string): Promise<SecretDetectionResult
         // Create unique key for this match
         const matchKey = `${rule.id}:${matchIndex}:${matchedText}`;
 
-        // Skip if already detected or false positive
-        if (seenMatches.has(matchKey) || isFalsePositive(matchedText, rule)) {
+        // Skip if already detected
+        if (seenMatches.has(matchKey)) {
           continue;
         }
 
