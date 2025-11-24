@@ -75,46 +75,45 @@ function setupSubmitInterception(config: ReturnType<typeof getCurrentSiteConfig>
 }
 
 /**
- * Setup Enter key interception on textarea
+ * Setup Enter key interception on window to ensure we catch it first
  */
 function setupEnterKeyInterception(config: ReturnType<typeof getCurrentSiteConfig>) {
   if (!config) return;
 
-  // Use MutationObserver to find textarea when it's added
-  const observer = new MutationObserver(() => {
-    const textarea = document.querySelector(config.textarea) as HTMLElement;
-    if (textarea && !textarea.hasAttribute('data-guardflow-keyhandler-initialized')) {
-      attachEnterKeyHandler(textarea, config);
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  // Also try immediately
-  const textarea = document.querySelector(config.textarea) as HTMLElement;
-  if (textarea) {
-    attachEnterKeyHandler(textarea, config);
-  }
+  // We attach to window with capture to ensure we get the event before the site's handlers
+  // even if they are attached to document/body with capture
+  window.addEventListener('keydown', (event) => handleGlobalEnterKey(event, config), true);
+  window.addEventListener('keypress', (event) => handleGlobalEnterKey(event, config), true);
+  window.addEventListener('keyup', (event) => handleGlobalEnterKey(event, config), true);
 }
 
 /**
- * Attach Enter key handler to textarea
+ * Global handler for Enter key events
  */
-function attachEnterKeyHandler(
-  textarea: HTMLElement,
-  config: ReturnType<typeof getCurrentSiteConfig>,
+async function handleGlobalEnterKey(
+  event: KeyboardEvent,
+  config: ReturnType<typeof getCurrentSiteConfig>
 ) {
   if (!config) return;
 
-  textarea.setAttribute('data-guardflow-keyhandler-initialized', 'true');
+  // Check if Enter was pressed (without Shift)
+  const isEnterKey = event.key === 'Enter' && !event.shiftKey;
+  if (!isEnterKey) return;
 
-  textarea.addEventListener('keydown', async (event: KeyboardEvent) => {
-    // Check if Enter was pressed (without Shift for normal chat apps)
-    const isEnterKey = event.key === 'Enter' && !event.shiftKey;
-    if (!isEnterKey) return;
+  // Check if the target is our textarea
+  const target = event.target as HTMLElement;
+  if (!target) return;
+
+  // Check if target matches our selector
+  // We use matches() but need to handle potential errors if selector is invalid
+  try {
+    // For some sites, the target might be a child of the textarea (e.g. a span inside contenteditable)
+    // So we check if the target OR any of its parents match the selector
+    const textarea = target.closest(config.textarea) as HTMLElement;
+
+    if (!textarea) {
+      return; // Not our target
+    }
 
     // If we're allowing the next submit, let it through
     if (allowNextSubmit) {
@@ -124,6 +123,9 @@ function attachEnterKeyHandler(
 
     // Only intercept if not already processing
     if (isProcessingSubmit) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       return;
     }
 
@@ -135,12 +137,25 @@ function attachEnterKeyHandler(
       return;
     }
 
-    // Prevent default submission
+    // Prevent default submission - use all three methods to ensure it's blocked
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
 
     // Mark as processing
     isProcessingSubmit = true;
+
+    // Store original content
+    const originalContent = messageText;
+
+    // For contenteditable divs (Claude, ChatGPT), temporarily clear content to prevent submission
+    const isContentEditable = textarea.getAttribute('contenteditable') === 'true';
+    if (isContentEditable) {
+      textarea.textContent = '';
+      textarea.innerHTML = '';
+      // Dispatch input event to sync with framework state (React, etc.)
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
     try {
       // Run secret detection
@@ -154,18 +169,42 @@ function attachEnterKeyHandler(
 
         if (userChoice === 'cancel') {
           stats.secretsBlocked += result.count;
+          // Restore content if user cancels
+          if (isContentEditable) {
+            textarea.textContent = originalContent;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            // Move cursor to end
+            placeCaretAtEnd(textarea);
+          }
           isProcessingSubmit = false;
           return;
         }
 
         if (userChoice === 'edit') {
           stats.secretsBlocked += result.count;
+          // Restore content for editing
+          if (isContentEditable) {
+            textarea.textContent = originalContent;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            // Move cursor to end
+            placeCaretAtEnd(textarea);
+          }
           textarea.focus();
           isProcessingSubmit = false;
           return;
         }
 
-        // User chose to send anyway
+        // User chose to send anyway - restore content
+        if (isContentEditable) {
+          textarea.textContent = originalContent;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } else {
+        // No secrets, restore content
+        if (isContentEditable) {
+          textarea.textContent = originalContent;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
 
       stats.messagesSent++;
@@ -175,6 +214,7 @@ function attachEnterKeyHandler(
       allowNextSubmit = true;
 
       // Dispatch the Enter key event again to trigger actual submission
+      // We need to dispatch it on the original target
       const enterEvent = new KeyboardEvent('keydown', {
         key: 'Enter',
         code: 'Enter',
@@ -184,7 +224,7 @@ function attachEnterKeyHandler(
         cancelable: true,
       });
 
-      textarea.dispatchEvent(enterEvent);
+      target.dispatchEvent(enterEvent);
     } catch (error) {
       isProcessingSubmit = false;
       allowNextSubmit = true;
@@ -199,9 +239,26 @@ function attachEnterKeyHandler(
         cancelable: true,
       });
 
-      textarea.dispatchEvent(enterEvent);
+      target.dispatchEvent(enterEvent);
     }
-  });
+  } catch (e) {
+    // Ignore selector errors
+  }
+}
+
+/**
+ * Helper to place caret at end of contenteditable
+ */
+function placeCaretAtEnd(el: HTMLElement) {
+  el.focus();
+  if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
 }
 
 /**
