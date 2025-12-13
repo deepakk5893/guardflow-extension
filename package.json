@@ -1,6 +1,6 @@
 {
   "name": "guardflow-extension",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Prevent accidental secret leaks to ChatGPT, Claude, and other AI services",
   "type": "module",
   "scripts": {
