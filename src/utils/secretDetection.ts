@@ -479,7 +479,6 @@ export async function detectSecrets(text: string): Promise<SecretDetectionResult
       count: secrets.length,
     };
   } catch (error) {
-    console.error('Error detecting secrets:', error);
     // Return empty result on error - fail open for UX
     return {
       hasSecrets: false,

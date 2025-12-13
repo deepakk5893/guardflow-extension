@@ -12,6 +12,8 @@ export interface SiteConfig {
   submitButton: string;
   /** Function to extract text from the textarea element */
   getMessageText: (element: HTMLElement) => string;
+  /** Function to set text in the textarea element */
+  setMessageText?: (element: HTMLElement, text: string) => void;
   /** Function to check if element is ready (optional) */
   isReady?: () => boolean;
 }
@@ -45,6 +47,11 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
 
       return text;
     },
+    setMessageText: (element: HTMLElement, text: string) => {
+      // ChatGPT uses ProseMirror contenteditable
+      element.innerText = text;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    },
     isReady: () => {
       return !!document.querySelector('#prompt-textarea');
     },
@@ -73,6 +80,11 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
 
       return text;
     },
+    setMessageText: (element: HTMLElement, text: string) => {
+      // ChatGPT uses ProseMirror contenteditable
+      element.innerText = text;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    },
     isReady: () => {
       return !!document.querySelector('#prompt-textarea');
     },
@@ -100,6 +112,16 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
     getMessageText: (element: HTMLElement) => {
       // Gemini uses rich-textarea custom element with Quill editor
       return element.innerText || element.textContent || '';
+    },
+    setMessageText: (element: HTMLElement, text: string) => {
+      // Find the contenteditable div inside rich-textarea
+      const editor = element.querySelector('.ql-editor') as HTMLElement;
+      if (editor) {
+        editor.innerHTML = text.replace(/\n/g, '<br>');
+        // Trigger input event to notify Gemini
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        editor.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     },
     isReady: () => {
       return !!document.querySelector('rich-textarea');

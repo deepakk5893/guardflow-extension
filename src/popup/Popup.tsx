@@ -40,7 +40,7 @@ function Popup() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <Shield size={24} />
-          <h1 style={{ fontSize: '18px', fontWeight: 600 }}>Guardflow</h1>
+          <h1 style={{ fontSize: '18px', fontWeight: 600 }}>Niyantra</h1>
         </div>
         <p style={{ fontSize: '13px', opacity: 0.9 }}>
           AI Chat Secret Detection
@@ -184,7 +184,7 @@ function Popup() {
           }}
         >
           <a
-            href="https://guardflow.tech"
+            href="https://niyantra.com"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -202,7 +202,7 @@ function Popup() {
             }}
           >
             <Settings size={14} />
-            Learn More About Guardflow
+            Learn More About Niyantra
           </a>
           <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center' }}>
             v1.0.0 • Free for individual developers

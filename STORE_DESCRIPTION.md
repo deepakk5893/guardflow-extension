@@ -1,12 +1,12 @@
 # Chrome Web Store Listing
 
 ## Extension Title
-**Guardflow - Secret Detector for AI Chat Security**
+**Niyantra - Secret Detector for AI Chat Security**
 
 ---
 
 ## Short Description (132 characters max for search results)
-Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini, PerPlexity and Groq. Free security for developers.
+Niyantra detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini, PerPlexity and Groq. Free security for developers.
 
 ---
 
@@ -21,12 +21,12 @@ secret detection, API key protection, prevent credential leaks, ChatGPT security
 
 Ever accidentally pasted your API key, database password, or authentication token into ChatGPT? You're not alone.
 
-Guardflow is a free browser extension that detects and blocks potential secret leaks before you send them to AI chat services. It works locally on your device—no data ever leaves your browser.
+Niyantra is a free browser extension that detects and blocks potential secret leaks before you send them to AI chat services. It works locally on your device—no data ever leaves your browser.
 
 ### How It Works
 1. Type your question or code into ChatGPT, Claude, Gemini, Perplexity, or Groq
 2. Click Send
-3. Guardflow instantly scans for secrets
+3. Niyantra instantly scans for secrets
 4. If secrets are detected, you get a warning dialog
 5. You can edit, send anyway, or cancel—the choice is yours
 
@@ -38,7 +38,7 @@ Guardflow is a free browser extension that detects and blocks potential secret l
 - 🪝 Webhook URLs
 - 🔒 And 15+ more secret types
 
-### Why Guardflow
+### Why Niyantra
 - ✅ **100% Local Processing** - No data sent to servers
 - ✅ **Privacy First** - We don't store, track, or analyze your messages
 - ✅ **Free Forever** - No premium plans, no accounts required
@@ -55,10 +55,10 @@ Guardflow is a free browser extension that detects and blocks potential secret l
 Team features, analytics, and compliance tracking for enterprises.
 
 ### Privacy
-Guardflow detects secrets locally using regex patterns. Zero data is sent to external servers. Read our full privacy policy in the extension details.
+Niyantra detects secrets locally using regex patterns. Zero data is sent to external servers. Read our full privacy policy in the extension details.
 
 ### Support
-Found a bug? Have a feature request? We're constantly improving Guardflow based on user feedback.
+Found a bug? Have a feature request? We're constantly improving Niyantra based on user feedback.
 
 **Keep your secrets safe. Ask AI with confidence.**
 

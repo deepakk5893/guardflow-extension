@@ -1,6 +1,6 @@
-# Contributing to GuardFlow
+# Contributing to Niyantra
 
-Thank you for your interest in contributing to GuardFlow! We welcome contributions of all kinds - whether it's bug reports, feature requests, documentation improvements, or code contributions.
+Thank you for your interest in contributing to Niyantra! We welcome contributions of all kinds - whether it's bug reports, feature requests, documentation improvements, or code contributions.
 
 ## Code of Conduct
 
@@ -75,14 +75,14 @@ Found a bug? Please create an issue with:
 - **Environment**:
   - OS (Windows, macOS, Linux)
   - Chrome version
-  - GuardFlow version
+  - Niyantra version
 
 **Example:**
 ```
 Title: False negative for OpenAI API key in code comment
 
 Description:
-GuardFlow didn't detect an OpenAI API key when pasted as a comment in code.
+Niyantra didn't detect an OpenAI API key when pasted as a comment in code.
 
 Steps to Reproduce:
 1. Paste this to ChatGPT:
@@ -92,7 +92,7 @@ Steps to Reproduce:
 Environment:
 - OS: macOS
 - Chrome: 130.0.0.0
-- GuardFlow: 1.0.0
+- Niyantra: 1.0.0
 ```
 
 ### 2. Feature Requests
@@ -388,4 +388,4 @@ Contributors will be recognized in:
 - GitHub contributors page
 - Release notes
 
-Thank you for making GuardFlow better! ❤️
+Thank you for making Niyantra better! ❤️

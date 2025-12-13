@@ -1,6 +1,6 @@
 # Build Guide - Multi-Browser Support
 
-GuardFlow now supports multiple browsers with a shared codebase!
+Niyantra now supports multiple browsers with a shared codebase!
 
 ## Project Structure
 

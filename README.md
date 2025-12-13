@@ -1,4 +1,4 @@
-# GuardFlow - Secret Detection for AI Chat Security
+# Niyantra - Secret Detection for AI Chat Security
 
 <div align="center">
 
@@ -28,7 +28,7 @@ When asking AI models for help debugging code, developers often accidentally pas
 
 **These leak to third-party AI services, creating security vulnerabilities.**
 
-GuardFlow intercepts these messages before submission and warns you with a clear dialog.
+Niyantra intercepts these messages before submission and warns you with a clear dialog.
 
 ---
 
@@ -71,7 +71,7 @@ GuardFlow intercepts these messages before submission and warns you with a clear
 ## Screenshots
 
 ### Stats Box
-![GuardFlow Stats Box](docs/screenshots/stats.jpg)
+![Niyantra Stats Box](docs/screenshots/stats.jpg)
 
 ### Secret Detection Warning
 ![ChatGPT Detection](docs/screenshots/chatgpt.jpg)
@@ -114,7 +114,7 @@ npm run build
    - Click **Load unpacked**
    - Select the `dist` folder from this project
 
-5. The GuardFlow extension icon will appear in your toolbar!
+5. The Niyantra extension icon will appear in your toolbar!
 
 ---
 
@@ -124,7 +124,7 @@ npm run build
 ```
 User types message in AI chat
          ↓
-GuardFlow content script intercepts
+Niyantra content script intercepts
          ↓
 Scans text against 52 secret patterns
          ↓
@@ -155,7 +155,7 @@ Secret detected?
 
 ## Multi-Browser Support
 
-GuardFlow supports multiple browsers with **shared code**:
+Niyantra supports multiple browsers with **shared code**:
 
 | Browser | Status | Install |
 |---------|--------|---------|
@@ -305,7 +305,7 @@ Use the test scenarios in `secret_leaks_scenario.txt`:
 - No hidden functionality
 
 ✅ **No Telemetry**
-- We don't know who uses GuardFlow
+- We don't know who uses Niyantra
 - We don't track what you detect
 - We don't store any secrets
 
@@ -358,8 +358,8 @@ git push origin feature/your-feature-name
 
 ## FAQ
 
-**Q: Does GuardFlow have access to my secrets?**
-A: No. GuardFlow never stores, logs, or transmits your data. Detection happens entirely in your browser.
+**Q: Does Niyantra have access to my secrets?**
+A: No. Niyantra never stores, logs, or transmits your data. Detection happens entirely in your browser.
 
 **Q: Will this slow down my browsing?**
 A: No. Pattern detection is optimized and runs in milliseconds.
@@ -368,7 +368,7 @@ A: No. Pattern detection is optimized and runs in milliseconds.
 A: Not yet, but it's on the roadmap. You can modify the source and build locally.
 
 **Q: Does it work offline?**
-A: Yes! GuardFlow works completely offline.
+A: Yes! Niyantra works completely offline.
 
 ---
 
@@ -399,6 +399,6 @@ Pattern sources:
 
 Made with ❤️ for developer security
 
-[⬆ back to top](#guardflow---secret-detection-for-ai-chat-security)
+[⬆ back to top](#niyantra---secret-detection-for-ai-chat-security)
 
 </div>

@@ -26,16 +26,43 @@ const stats: Stats = {
 };
 
 /**
+ * Helper to set message text in textarea
+ */
+function setMessageText(
+  element: HTMLElement,
+  text: string,
+  config: ReturnType<typeof getCurrentSiteConfig>
+) {
+  if (!config) return;
+
+  if (config.setMessageText) {
+    config.setMessageText(element, text);
+  } else {
+    // Fallback for sites without custom setter
+    if (element instanceof HTMLTextAreaElement) {
+      element.value = text;
+    } else {
+      element.innerText = text;
+    }
+    // Trigger input events
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+/**
  * Initialize the content script
  */
 async function init() {
   const config = getCurrentSiteConfig();
+
   if (!config) {
     return;
   }
 
   // Wait for site to be ready
   const isReady = await waitForSiteReady(config, 10000);
+
   if (!isReady) {
     return;
   }
@@ -145,18 +172,6 @@ async function handleGlobalEnterKey(
     // Mark as processing
     isProcessingSubmit = true;
 
-    // Store original content
-    const originalContent = messageText;
-
-    // For contenteditable divs (Claude, ChatGPT), temporarily clear content to prevent submission
-    const isContentEditable = textarea.getAttribute('contenteditable') === 'true';
-    if (isContentEditable) {
-      textarea.textContent = '';
-      textarea.innerHTML = '';
-      // Dispatch input event to sync with framework state (React, etc.)
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
     try {
       // Run secret detection
       const result = await detectSecrets(messageText);
@@ -169,42 +184,18 @@ async function handleGlobalEnterKey(
 
         if (userChoice === 'cancel') {
           stats.secretsBlocked += result.count;
-          // Restore content if user cancels
-          if (isContentEditable) {
-            textarea.textContent = originalContent;
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            // Move cursor to end
-            placeCaretAtEnd(textarea);
-          }
           isProcessingSubmit = false;
           return;
         }
 
         if (userChoice === 'edit') {
           stats.secretsBlocked += result.count;
-          // Restore content for editing
-          if (isContentEditable) {
-            textarea.textContent = originalContent;
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            // Move cursor to end
-            placeCaretAtEnd(textarea);
-          }
           textarea.focus();
           isProcessingSubmit = false;
           return;
         }
 
-        // User chose to send anyway - restore content
-        if (isContentEditable) {
-          textarea.textContent = originalContent;
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      } else {
-        // No secrets, restore content
-        if (isContentEditable) {
-          textarea.textContent = originalContent;
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        // User chose to send anyway - proceed with submission
       }
 
       stats.messagesSent++;
@@ -213,51 +204,45 @@ async function handleGlobalEnterKey(
       isProcessingSubmit = false;
       allowNextSubmit = true;
 
-      // Dispatch the Enter key event again to trigger actual submission
-      // We need to dispatch it on the original target
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true,
-      });
+      // Click the submit button to trigger submission
+      // Use setTimeout to ensure we're out of the current event handling context
+      setTimeout(() => {
+        const submitButton = document.querySelector(config.submitButton) as HTMLElement;
+        if (submitButton) {
+          // Check textarea content before clicking
+          const textareaCheck = document.querySelector(config.textarea) as HTMLElement;
+          const currentText = textareaCheck ? config.getMessageText(textareaCheck) : '';
 
-      target.dispatchEvent(enterEvent);
+          // If textarea is empty but we had a message, restore it
+          if ((!currentText || currentText.trim().length === 0) && messageText && textareaCheck) {
+            setMessageText(textareaCheck, messageText, config);
+          }
+
+          submitButton.click();
+        }
+      }, 0);
     } catch (error) {
       isProcessingSubmit = false;
       allowNextSubmit = true;
 
-      // Dispatch Enter event to allow submission on error
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true,
-      });
+      // On error, try to submit anyway by clicking button
+      setTimeout(() => {
+        const submitButton = document.querySelector(config.submitButton) as HTMLElement;
+        if (submitButton) {
+          const textareaCheck = document.querySelector(config.textarea) as HTMLElement;
+          const currentText = textareaCheck ? config.getMessageText(textareaCheck) : '';
 
-      target.dispatchEvent(enterEvent);
+          // Restore message if needed
+          if ((!currentText || currentText.trim().length === 0) && messageText && textareaCheck) {
+            setMessageText(textareaCheck, messageText, config);
+          }
+
+          submitButton.click();
+        }
+      }, 0);
     }
   } catch (e) {
     // Ignore selector errors
-  }
-}
-
-/**
- * Helper to place caret at end of contenteditable
- */
-function placeCaretAtEnd(el: HTMLElement) {
-  el.focus();
-  if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
   }
 }
 

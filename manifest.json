@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Guardflow - Secret Detector for AI Chat Security",
+  "name": "Niyantra - Secret Detector for AI Chat Security",
   "version": "1.0.0",
-  "description": "Guardflow detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
+  "description": "Niyantra detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
   "permissions": [
     "storage",
     "activeTab"
@@ -36,7 +36,7 @@
   },
   "action": {
     "default_popup": "public/popup.html",
-    "default_title": "Guardflow - Secret Detector",
+    "default_title": "Niyantra - Secret Detector",
     "default_icon": {
       "16": "public/icons/icon16.png",
       "48": "public/icons/icon48.png",

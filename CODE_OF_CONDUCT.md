@@ -2,7 +2,7 @@
 
 ## Our Commitment
 
-We are committed to providing a welcoming and inspiring community for all. We pledge that everyone participating in the GuardFlow community and its projects will be treated with respect and dignity.
+We are committed to providing a welcoming and inspiring community for all. We pledge that everyone participating in the Niyantra community and its projects will be treated with respect and dignity.
 
 We are dedicated to providing a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, sexual identity and orientation, or socioeconomic status.
 

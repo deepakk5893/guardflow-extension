@@ -10,12 +10,12 @@ Please add the following icon files:
 
 - PNG format
 - Transparent background recommended
-- Should be the Guardflow shield logo
+- Should be the Niyantra shield logo
 - Square aspect ratio
 
 ## Quick Generate
 
-You can use the Guardflow logo and resize it:
+You can use the Niyantra logo and resize it:
 
 ```bash
 # Example with ImageMagick

@@ -1,4 +1,4 @@
-# Guardflow Secret Detection - Test Scenarios
+# Niyantra Secret Detection - Test Scenarios
 
 Comprehensive, realistic test scenarios for all secret detection patterns.
 
@@ -302,7 +302,7 @@ Why isn't authentication working?
 
 ### Manual Testing
 1. Copy each scenario and paste it into ChatGPT, Claude, Gemini, Perplexity, or Groq
-2. You should see a "GuardFlow Secret Detector" warning dialog
+2. You should see a "Niyantra Secret Detector" warning dialog
 3. Test the three options: Cancel, Edit Message, Send Anyway
 
 ### Automated Testing
@@ -341,7 +341,7 @@ All scenarios should trigger the secret warning dialog with the detected secrets
 
 [Paste Scenario 2.1 - PostgreSQL Connection Error]
 
-"See? GuardFlow instantly detects the PostgreSQL password in the connection string and stops me before sending it to the AI. This prevents credential leakage."
+"See? Niyantra instantly detects the PostgreSQL password in the connection string and stops me before sending it to the AI. This prevents credential leakage."
 
 [Show the warning dialog with detected PostgreSQL secret]
 
@@ -359,6 +359,6 @@ All scenarios should trigger the secret warning dialog with the detected secrets
 - GitHub webhook secret (whsec_...)
 - OpenAI key (sk-...)
 
-GuardFlow catches all of them automatically."
+Niyantra catches all of them automatically."
 
 [Show dialog with 4 detected secrets highlighted]
