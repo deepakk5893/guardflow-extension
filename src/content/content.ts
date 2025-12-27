@@ -1,29 +1,230 @@
 /**
  * Content script - Injected into AI chat pages
- * Intercepts message submissions and checks for secrets
+ * Intercepts message submissions and checks for secrets/PII
+ *
+ * Supports three scanning modes:
+ * - Local only: Fast regex-based detection (original behavior)
+ * - Server only: Full server-side scanning with GLiNER
+ * - Hybrid: Local first, then server for thorough detection
  */
 
 import { detectSecrets } from '~/utils/secretDetection';
 import { getCurrentSiteConfig, waitForSiteReady } from './site-configs';
-import { showSecretWarningDialog } from './dialog';
+import {
+  showEnhancedWarningDialog,
+  showScanningOverlay,
+} from './dialog';
+import { apiClient, type PIIDetection } from './api-client';
+import { initFileInterceptor, getFileStats } from './file-interceptor';
 
 // Track if we're currently processing a submission
 let isProcessingSubmit = false;
 // Track if we should allow the next submission without checking
 let allowNextSubmit = false;
 
+// Scan mode types
+type ScanMode = 'local' | 'server' | 'hybrid';
+
 // Track stats
 interface Stats {
   secretsDetected: number;
   secretsBlocked: number;
   messagesSent: number;
+  serverScans: number;
+  serverErrors: number;
 }
 
 const stats: Stats = {
   secretsDetected: 0,
   secretsBlocked: 0,
   messagesSent: 0,
+  serverScans: 0,
+  serverErrors: 0,
 };
+
+// Scan result interface (unified for local and server)
+interface ScanResult {
+  hasViolations: boolean;
+  shouldBlock: boolean;
+  detections: PIIDetection[];
+  redactedText?: string;
+  source: 'local' | 'server' | 'hybrid';
+  fileViolations?: Array<{
+    filename: string;
+    detections: PIIDetection[];
+    redactedDocument?: string;
+  }>;
+}
+
+/**
+ * Get current scan mode from storage
+ */
+async function getScanMode(): Promise<ScanMode> {
+  try {
+    const result = await chrome.storage.local.get('scanMode');
+    return result.scanMode || 'hybrid'; // Default to hybrid
+  } catch {
+    return 'hybrid';
+  }
+}
+
+/**
+ * Perform hybrid scanning (local + server) for message text
+ * Note: Files are scanned on upload (not here) because ChatGPT pre-uploads immediately
+ */
+async function performScan(
+  messageText: string,
+  platform: string,
+): Promise<ScanResult> {
+  const scanMode = await getScanMode();
+
+  // Local-only mode
+  if (scanMode === 'local' || !apiClient.isConfigured()) {
+    const localResult = await detectSecrets(messageText);
+    return {
+      hasViolations: localResult.hasSecrets,
+      shouldBlock: localResult.hasSecrets,
+      detections: localResult.secrets.map((s) => ({
+        type: s.type,
+        category: 'hard' as const,
+        start: s.index,
+        end: s.index + s.length,
+        preview: s.preview,
+        severity: s.severity || 'high',
+        confidence: 1.0,
+      })),
+      redactedText: undefined,
+      source: 'local',
+    };
+  }
+
+  // Server-only or hybrid mode - try server first
+  try {
+    // Initialize API client if needed
+    if (!apiClient.isInitialized()) {
+      await apiClient.initialize();
+    }
+
+    // Skip server scan if not configured
+    if (!apiClient.isConfigured()) {
+      // Fallback to local
+      const localResult = await detectSecrets(messageText);
+      return {
+        hasViolations: localResult.hasSecrets,
+        shouldBlock: localResult.hasSecrets,
+        detections: localResult.secrets.map((s) => ({
+          type: s.type,
+          category: 'hard' as const,
+          start: s.index,
+          end: s.index + s.length,
+          preview: s.preview,
+          severity: s.severity || 'high',
+          confidence: 1.0,
+        })),
+        redactedText: undefined,
+        source: 'local',
+      };
+    }
+
+    stats.serverScans++;
+
+    // Call server API
+    const serverResponse = await apiClient.scanMessage(messageText, platform);
+
+    return {
+      hasViolations: serverResponse.has_violations,
+      shouldBlock: serverResponse.should_block,
+      detections: serverResponse.detections,
+      redactedText: serverResponse.redacted_text,
+      source: 'server',
+    };
+  } catch (error) {
+    console.warn('[Niyantra] Server scan failed, falling back to local:', error);
+    stats.serverErrors++;
+
+    // Fallback to local detection on server error
+    const localResult = await detectSecrets(messageText);
+    return {
+      hasViolations: localResult.hasSecrets,
+      shouldBlock: localResult.hasSecrets,
+      detections: localResult.secrets.map((s) => ({
+        type: s.type,
+        category: 'hard' as const,
+        start: s.index,
+        end: s.index + s.length,
+        preview: s.preview,
+        severity: s.severity || 'high',
+        confidence: 1.0,
+      })),
+      redactedText: undefined,
+      source: 'local',
+    };
+  }
+}
+
+/**
+ * Handle scan result and show dialog if needed
+ * Returns: 'allow' | 'block' | 'redacted' (with redacted text)
+ */
+async function handleScanResult(
+  result: ScanResult,
+  messageText: string,
+  textarea: HTMLElement,
+  config: ReturnType<typeof getCurrentSiteConfig>,
+): Promise<{ action: 'allow' | 'block'; redactedText?: string }> {
+  if (!result.hasViolations) {
+    return { action: 'allow' };
+  }
+
+  stats.secretsDetected += result.detections.length;
+  if (result.fileViolations) {
+    stats.secretsDetected += result.fileViolations.reduce((sum, fv) => sum + fv.detections.length, 0);
+  }
+
+  // Show enhanced dialog with server detections (message + files)
+  const userChoice = await showEnhancedWarningDialog(
+    result.detections,
+    messageText,
+    result.redactedText,
+    result.fileViolations,
+  );
+
+  if (userChoice === 'cancel') {
+    stats.secretsBlocked += result.detections.length;
+    // Clear all file inputs if there are file violations
+    if (result.fileViolations && result.fileViolations.length > 0) {
+      clearFileInputs(config);
+    }
+    return { action: 'block' };
+  }
+
+  if (userChoice === 'edit') {
+    stats.secretsBlocked += result.detections.length;
+    textarea.focus();
+    // Clear all file inputs if there are file violations (can't edit files)
+    if (result.fileViolations && result.fileViolations.length > 0) {
+      clearFileInputs(config);
+    }
+    return { action: 'block' };
+  }
+
+  if (userChoice === 'send-redacted') {
+    // Clear file inputs with violations (files are blocked, only message can be redacted)
+    if (result.fileViolations && result.fileViolations.length > 0) {
+      clearFileInputs(config);
+    }
+
+    // Replace message with redacted version if available
+    if (result.redactedText && config) {
+      setMessageText(textarea, result.redactedText, config);
+    }
+
+    return { action: 'allow', redactedText: result.redactedText };
+  }
+
+  // Default: block
+  return { action: 'block' };
+}
 
 /**
  * Helper to set message text in textarea
@@ -51,6 +252,22 @@ function setMessageText(
 }
 
 /**
+ * Helper to clear all file inputs (removes attached files)
+ */
+function clearFileInputs(config: ReturnType<typeof getCurrentSiteConfig> | null) {
+  if (!config) return;
+
+  // Find all file inputs and clear them
+  const fileInputs = document.querySelectorAll('input[type="file"]');
+  fileInputs.forEach((input) => {
+    const htmlInput = input as HTMLInputElement;
+    htmlInput.value = ''; // Clear the file input
+  });
+
+  console.log('[Niyantra] Cleared file inputs due to violations');
+}
+
+/**
  * Initialize the content script
  */
 async function init() {
@@ -58,6 +275,18 @@ async function init() {
 
   if (!config) {
     return;
+  }
+
+  // Initialize API client for server-side scanning
+  try {
+    await apiClient.initialize();
+    if (apiClient.isConfigured()) {
+      console.log('[Niyantra] Server scanning enabled:', apiClient.getServerUrl());
+    } else {
+      console.log('[Niyantra] Local-only scanning (server not configured)');
+    }
+  } catch (e) {
+    console.warn('[Niyantra] Failed to initialize API client:', e);
   }
 
   // Wait for site to be ready
@@ -72,6 +301,11 @@ async function init() {
 
   // Setup Enter key interception on textarea
   setupEnterKeyInterception(config);
+
+  // Initialize file interception (for attachments)
+  initFileInterceptor();
+
+  console.log('[Niyantra] Content script initialized for', config.name);
 }
 
 /**
@@ -172,30 +406,30 @@ async function handleGlobalEnterKey(
     // Mark as processing
     isProcessingSubmit = true;
 
+    // Show scanning overlay if server scanning is enabled
+    let removeOverlay: (() => void) | null = null;
+    if (apiClient.isConfigured()) {
+      removeOverlay = showScanningOverlay();
+    }
+
     try {
-      // Run secret detection
-      const result = await detectSecrets(messageText);
+      // Run message text scanning (files are scanned on upload)
+      const result = await performScan(messageText, config.name);
 
-      if (result.hasSecrets) {
-        stats.secretsDetected += result.count;
+      // Remove scanning overlay
+      if (removeOverlay) removeOverlay();
 
-        // Show warning dialog
-        const userChoice = await showSecretWarningDialog(result, messageText);
+      // Handle the scan result
+      const { action, redactedText } = await handleScanResult(
+        result,
+        messageText,
+        textarea,
+        config,
+      );
 
-        if (userChoice === 'cancel') {
-          stats.secretsBlocked += result.count;
-          isProcessingSubmit = false;
-          return;
-        }
-
-        if (userChoice === 'edit') {
-          stats.secretsBlocked += result.count;
-          textarea.focus();
-          isProcessingSubmit = false;
-          return;
-        }
-
-        // User chose to send anyway - proceed with submission
+      if (action === 'block') {
+        isProcessingSubmit = false;
+        return;
       }
 
       stats.messagesSent++;
@@ -213,15 +447,22 @@ async function handleGlobalEnterKey(
           const textareaCheck = document.querySelector(config.textarea) as HTMLElement;
           const currentText = textareaCheck ? config.getMessageText(textareaCheck) : '';
 
+          // Use redacted text if available, otherwise restore original
+          const textToSend = redactedText || messageText;
+
           // If textarea is empty but we had a message, restore it
-          if ((!currentText || currentText.trim().length === 0) && messageText && textareaCheck) {
-            setMessageText(textareaCheck, messageText, config);
+          if ((!currentText || currentText.trim().length === 0) && textToSend && textareaCheck) {
+            setMessageText(textareaCheck, textToSend, config);
           }
 
           submitButton.click();
         }
       }, 0);
     } catch (error) {
+      // Remove scanning overlay on error
+      if (removeOverlay) removeOverlay();
+
+      console.error('[Niyantra] Scan error:', error);
       isProcessingSubmit = false;
       allowNextSubmit = true;
 
@@ -262,7 +503,7 @@ function attachSubmitHandler(
   button.addEventListener(
     'click',
     async (event) => {
-      // If we're allowing the next submit (user chose to send anyway), let it through
+      // If we're allowing the next submit (user chose to send or send-redacted), let it through
       if (allowNextSubmit) {
         allowNextSubmit = false;
         return;
@@ -295,31 +536,30 @@ function attachSubmitHandler(
       // Mark as processing
       isProcessingSubmit = true;
 
+      // Show scanning overlay if server scanning is enabled
+      let removeOverlay: (() => void) | null = null;
+      if (apiClient.isConfigured()) {
+        removeOverlay = showScanningOverlay();
+      }
+
       try {
-        // Run secret detection
-        const result = await detectSecrets(messageText);
+        // Run message text scanning (files are scanned on upload)
+        const result = await performScan(messageText, config.name);
 
-        if (result.hasSecrets) {
-          stats.secretsDetected += result.count;
+        // Remove scanning overlay
+        if (removeOverlay) removeOverlay();
 
-          // Show warning dialog
-          const userChoice = await showSecretWarningDialog(result, messageText);
+        // Handle the scan result
+        const { action } = await handleScanResult(
+          result,
+          messageText,
+          textarea,
+          config,
+        );
 
-          if (userChoice === 'cancel') {
-            stats.secretsBlocked += result.count;
-            isProcessingSubmit = false;
-            return;
-          }
-
-          if (userChoice === 'edit') {
-            stats.secretsBlocked += result.count;
-            // Focus textarea so user can edit
-            textarea.focus();
-            isProcessingSubmit = false;
-            return;
-          }
-
-          // User chose to send anyway
+        if (action === 'block') {
+          isProcessingSubmit = false;
+          return;
         }
 
         stats.messagesSent++;
@@ -331,6 +571,11 @@ function attachSubmitHandler(
         // Trigger the actual click (this will trigger our handler again, but allowNextSubmit will let it through)
         button.click();
       } catch (error) {
+        // Remove scanning overlay on error
+        if (removeOverlay) removeOverlay();
+
+        console.error('[Niyantra] Scan error:', error);
+
         // On error, allow submission (fail open for better UX)
         isProcessingSubmit = false;
         allowNextSubmit = true;
@@ -379,8 +624,22 @@ if (document.readyState === 'loading') {
 // Save stats periodically
 setInterval(saveStats, 10000); // Every 10 seconds
 
+// Listen for settings updates from background
+chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+  if (message.type === 'SETTINGS_CHANGED') {
+    console.log('[Niyantra] Settings changed, reinitializing API client');
+    // Reinitialize API client with new settings
+    apiClient.updateSettings(message.serverUrl, message.apiKey).catch((err) => {
+      console.error('[Niyantra] Failed to update settings:', err);
+    });
+  }
+});
+
 // Export for debugging
 (window as any).__guardflow = {
   stats,
-  version: '1.0.0',
+  fileStats: getFileStats,
+  version: '2.0.0',
+  isServerConfigured: () => apiClient.isConfigured(),
+  serverUrl: () => apiClient.getServerUrl(),
 };

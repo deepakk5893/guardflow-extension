@@ -132,7 +132,7 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
   'www.perplexity.ai': {
     name: 'Perplexity',
     textarea: '#ask-input, div[role="textbox"][contenteditable="true"]',
-    submitButton: 'button[data-testid="submit-button"]',
+    submitButton: 'button[aria-label="Submit"]',
     getMessageText: (element: HTMLElement) => {
       // Perplexity uses Lexical editor (contenteditable div)
       return element.innerText || element.textContent || '';
@@ -142,11 +142,11 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
     },
   },
 
-  // Groq
-  'chat.groq.com': {
-    name: 'Groq',
-    textarea: 'textarea#chat',
-    submitButton: 'button[type="submit"]',
+  // Grok (by xAI)
+  'grok.com': {
+    name: 'Grok',
+    textarea: 'textarea[aria-label="Ask Grok anything"]',
+    submitButton: 'button[aria-label="Submit"]',
     getMessageText: (element: HTMLElement) => {
       if (element instanceof HTMLTextAreaElement) {
         return element.value;
@@ -154,7 +154,7 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
       return element.textContent || '';
     },
     isReady: () => {
-      return !!document.querySelector('textarea#chat');
+      return !!document.querySelector('textarea[aria-label="Ask Grok anything"]');
     },
   },
 };

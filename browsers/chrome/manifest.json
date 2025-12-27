@@ -1,10 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Niyantra - Secret Detector for AI Chat Security",
-  "version": "1.0.3",
-  "description": "Niyantra detects & blocks API keys, passwords, secrets in ChatGPT, Claude, Gemini. Free security for developers.",
+  "name": "Niyantra - AI Chat Security & PII Protection",
+  "version": "2.0.0",
+  "description": "Enterprise AI governance. Detects & blocks secrets, PII, and sensitive data in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redaction for compliance.",
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab",
+    "alarms"
   ],
   "host_permissions": [
     "https://chat.openai.com/*",
@@ -12,7 +14,10 @@
     "https://claude.ai/*",
     "https://gemini.google.com/*",
     "https://www.perplexity.ai/*",
-    "https://chat.groq.com/*"
+    "https://grok.com/*",
+    "https://*.niyantra.com/*",
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
   ],
   "content_scripts": [
     {
@@ -22,7 +27,7 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*",
         "https://www.perplexity.ai/*",
-        "https://chat.groq.com/*"
+        "https://grok.com/*"
       ],
       "js": ["../../src/content/content.ts"],
       "run_at": "document_end",
@@ -35,7 +40,7 @@
   },
   "action": {
     "default_popup": "public/popup.html",
-    "default_title": "Niyantra - Secret Detector",
+    "default_title": "Niyantra - AI Security",
     "default_icon": {
       "16": "public/icons/icon16.png",
       "48": "public/icons/icon48.png",
