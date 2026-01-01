@@ -11,7 +11,9 @@ import {
   Loader,
   ChevronLeft,
   FileText,
+  Activity
 } from 'lucide-react';
+import './Popup.css';
 
 interface Stats {
   secretsDetected: number;
@@ -152,202 +154,107 @@ function Popup() {
   // Settings View
   if (view === 'settings') {
     return (
-      <div style={{ background: 'white', minWidth: '320px' }}>
+      <div className="popup-container">
         {/* Header */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '16px 20px',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <button
-            onClick={() => setView('main')}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ChevronLeft size={18} color="white" />
-          </button>
-          <div>
-            <h1 style={{ fontSize: '16px', fontWeight: 600 }}>Settings</h1>
-            <p style={{ fontSize: '12px', opacity: 0.9 }}>Server Configuration</p>
+        <div className="header">
+          <div className="header-top">
+            <button
+              onClick={() => setView('main')}
+              className="icon-btn"
+              title="Back"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="settings-header-content" style={{ textAlign: 'right' }}>
+              <h1 className="settings-title">Settings</h1>
+              <p className="settings-subtitle">Configuration</p>
+            </div>
           </div>
         </div>
 
         {/* Settings Form */}
-        <div style={{ padding: '16px' }}>
+        <div className="content">
           {/* Connection Status */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              marginBottom: '16px',
-              background:
-                connectionStatus === 'connected'
-                  ? '#dcfce7'
-                  : connectionStatus === 'error'
-                    ? '#fee2e2'
-                    : '#f3f4f6',
-            }}
-          >
+          <div className={`connection-banner ${connectionStatus}`}>
             {connectionStatus === 'checking' ? (
-              <Loader size={16} className="animate-spin" color="#6b7280" />
+              <Loader size={16} className="animate-spin" />
             ) : connectionStatus === 'connected' ? (
-              <CheckCircle size={16} color="#15803d" />
+              <CheckCircle size={16} />
             ) : connectionStatus === 'error' ? (
-              <XCircle size={16} color="#dc2626" />
+              <XCircle size={16} />
             ) : (
-              <Server size={16} color="#6b7280" />
+              <Server size={16} />
             )}
-            <span
-              style={{
-                fontSize: '13px',
-                color:
-                  connectionStatus === 'connected'
-                    ? '#15803d'
-                    : connectionStatus === 'error'
-                      ? '#dc2626'
-                      : '#6b7280',
-              }}
-            >
-              {statusMessage || 'Not configured'}
-            </span>
+            <span>{statusMessage || 'Not configured'}</span>
           </div>
 
           {/* Server URL */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="form-group">
+            <label className="form-label">
               <Server size={14} />
               Server URL
             </label>
             <input
               type="url"
+              className="form-input"
               value={serverUrl}
               onChange={(e) => setServerUrl(e.target.value)}
               placeholder="https://niyantra.yourcompany.com"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '13px',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
             />
-            <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-              Your organization's Niyantra server address
-            </p>
+            <p className="form-hint">Your organization's Niyantra server address</p>
           </div>
 
           {/* API Key */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '6px',
-              }}
-            >
+          <div className="form-group">
+            <label className="form-label">
               <Key size={14} />
               API Key
             </label>
             <input
               type="password"
+              className="form-input"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="niy_xxxxxxxxxxxxx"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontFamily: 'monospace',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              style={{ fontFamily: 'monospace' }}
             />
-            <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-              Get this from your Niyantra dashboard
-            </p>
+            <p className="form-hint">Get this from your Niyantra dashboard</p>
           </div>
 
           {/* Scan Mode */}
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '13px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '8px',
-              }}
-            >
+          <div className="form-group">
+            <label className="form-label" style={{ marginBottom: '12px' }}>
               Scan Mode
             </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="scan-mode-group">
               {[
-                { value: 'local', label: 'Local Only', desc: 'Fast, privacy-first detection' },
+                { value: 'local', label: 'Local Only', desc: 'Privacy-first client-side detection' },
                 { value: 'hybrid', label: 'Hybrid (Recommended)', desc: 'Local + server for best coverage' },
-                { value: 'server', label: 'Server Only', desc: 'Full server-side scanning' },
+                { value: 'server', label: 'Server Only', desc: 'Full server-side analysis' },
               ].map((mode) => (
-                <label
+                <div
                   key={mode.value}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '10px',
-                    padding: '10px',
-                    border: `1px solid ${scanMode === mode.value ? '#6366f1' : '#e5e7eb'}`,
-                    borderRadius: '8px',
-                    background: scanMode === mode.value ? '#eef2ff' : 'white',
-                    cursor: 'pointer',
-                  }}
+                  className={`scan-mode-card ${scanMode === mode.value ? 'selected' : ''}`}
+                  onClick={() => setScanMode(mode.value as ScanMode)}
                 >
-                  <input
-                    type="radio"
-                    name="scanMode"
-                    value={mode.value}
-                    checked={scanMode === mode.value}
-                    onChange={() => setScanMode(mode.value as ScanMode)}
-                    style={{ marginTop: '2px' }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>
-                      {mode.label}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#6b7280' }}>{mode.desc}</div>
+                  <div style={{
+                    marginTop: '3px',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    border: `1px solid ${scanMode === mode.value ? 'var(--primary-color)' : '#d1d5db'}`,
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {scanMode === mode.value && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />}
                   </div>
-                </label>
+                  <div className="scan-mode-info">
+                    <div className="scan-mode-title">{mode.label}</div>
+                    <div className="scan-mode-desc">{mode.desc}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -356,21 +263,7 @@ function Popup() {
           <button
             onClick={saveSettings}
             disabled={isSaving}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: isSaving ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
+            className="save-btn"
           >
             {isSaving ? (
               <>
@@ -388,231 +281,101 @@ function Popup() {
 
   // Main View
   return (
-    <div style={{ background: 'white', minWidth: '320px' }}>
+    <div className="popup-container">
       {/* Header */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '20px',
-          color: 'white',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '8px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="header">
+        <div className="header-top">
+          <div className="brand">
             <Shield size={24} />
-            <h1 style={{ fontSize: '18px', fontWeight: 600 }}>Niyantra</h1>
+            <h1>Niyantra</h1>
           </div>
           <button
             onClick={() => setView('settings')}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="icon-btn"
+            title="Settings"
           >
-            <Settings size={18} color="white" />
+            <Settings size={18} />
           </button>
         </div>
-        <p style={{ fontSize: '13px', opacity: 0.9 }}>AI Chat Secret & PII Detection</p>
+        <p className="subtitle">AI Chat Secret & PII Detection</p>
 
         {/* Server Status Badge */}
-        <div
-          style={{
-            marginTop: '12px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '12px',
-            fontSize: '11px',
-          }}
-        >
+        <div className="status-badge">
           {serverUrl ? (
             <>
-              <div
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: connectionStatus === 'connected' ? '#4ade80' : '#fbbf24',
-                }}
-              />
-              {connectionStatus === 'connected' ? 'Server Connected' : 'Server Configured'}
+              <div className={`status-dot ${connectionStatus === 'connected' ? 'connected' : 'configured'}`} />
+              {connectionStatus === 'connected' ? 'Server Online' : 'Server Configured'}
             </>
           ) : (
             <>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9ca3af' }} />
+              <div className="status-dot local" />
               Local Mode
             </>
           )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ padding: '16px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '12px' }}>
-            Protection Stats
-          </h2>
+      <div className="content">
+        <h2 className="section-title">Protection Stats</h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* Secrets Detected */}
-            <div
-              style={{
-                background: '#fef3c7',
-                border: '1px solid #fde047',
-                borderRadius: '8px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={16} color="#d97706" />
-                <span style={{ fontSize: '13px', color: '#92400e' }}>Secrets Detected</span>
-              </div>
-              <span style={{ fontSize: '16px', fontWeight: 600, color: '#92400e' }}>
-                {stats.secretsDetected}
-              </span>
+        {/* Stats Grid */}
+        <div className="stats-grid">
+          <div className="stat-card detected">
+            <div className="stat-header">
+              <AlertTriangle size={14} className="text-amber-600" color="#d97706" />
+              Secrets Detected
             </div>
+            <div className="stat-value">{stats.secretsDetected}</div>
+          </div>
 
-            {/* Secrets Blocked */}
-            <div
-              style={{
-                background: '#dcfce7',
-                border: '1px solid #86efac',
-                borderRadius: '8px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shield size={16} color="#15803d" />
-                <span style={{ fontSize: '13px', color: '#15803d' }}>Secrets Blocked</span>
-              </div>
-              <span style={{ fontSize: '16px', fontWeight: 600, color: '#15803d' }}>
-                {stats.secretsBlocked}
-              </span>
+          <div className="stat-card blocked">
+            <div className="stat-header">
+              <Shield size={14} className="text-emerald-600" color="#059669" />
+              Blocked
             </div>
+            <div className="stat-value">{stats.secretsBlocked}</div>
+          </div>
 
-            {/* Messages Sent */}
-            <div
-              style={{
-                background: '#e0e7ff',
-                border: '1px solid #c7d2fe',
-                borderRadius: '8px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Send size={16} color="#4338ca" />
-                <span style={{ fontSize: '13px', color: '#4338ca' }}>Messages Sent</span>
-              </div>
-              <span style={{ fontSize: '16px', fontWeight: 600, color: '#4338ca' }}>
-                {stats.messagesSent}
-              </span>
+          <div className="stat-card messages">
+            <div className="stat-header">
+              <Send size={14} className="text-blue-600" color="#2563eb" />
+              Messages
             </div>
+            <div className="stat-value">{stats.messagesSent}</div>
+          </div>
 
-            {/* Server Scans (if server enabled) */}
-            {serverUrl && stats.serverScans !== undefined && stats.serverScans > 0 && (
-              <div
-                style={{
-                  background: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Server size={16} color="#0369a1" />
-                  <span style={{ fontSize: '13px', color: '#0369a1' }}>Server Scans</span>
-                </div>
-                <span style={{ fontSize: '16px', fontWeight: 600, color: '#0369a1' }}>
-                  {stats.serverScans}
-                </span>
-              </div>
-            )}
+          <div className="stat-card scans">
+            <div className="stat-header">
+              {serverUrl ? <Server size={14} color="#7c3aed" /> : <Activity size={14} color="#7c3aed" />}
+              {serverUrl ? 'Server Scans' : 'Local Scans'}
+            </div>
+            <div className="stat-value">{serverUrl ? (stats.serverScans || 0) : (stats.messagesSent)}</div>
           </div>
         </div>
 
+
         {/* Protection Rate */}
         {stats.secretsDetected > 0 && (
-          <div
-            style={{
-              background: '#f9fafb',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '16px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '8px',
-              }}
-            >
-              <span style={{ fontSize: '12px', color: '#6b7280' }}>Protection Rate</span>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
-                {protectionRate}%
-              </span>
+          <div className="protection-box">
+            <div className="protection-header">
+              <span className="protection-label">Protection Rate</span>
+              <span className="protection-percent">{protectionRate}%</span>
             </div>
-            <div
-              style={{ background: '#e5e7eb', borderRadius: '4px', height: '6px', overflow: 'hidden' }}
-            >
+            <div className="progress-bar-bg">
               <div
-                style={{
-                  background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-                  height: '100%',
-                  width: `${protectionRate}%`,
-                  transition: 'width 0.3s ease',
-                }}
+                className="progress-bar-fill"
+                style={{ width: `${protectionRate}%` }}
               />
             </div>
           </div>
         )}
 
         {/* Supported Sites */}
-        <div style={{ marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', marginBottom: '8px' }}>
-            Protected Sites
-          </h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Groq'].map((site) => (
-              <span
-                key={site}
-                style={{
-                  background: '#ede9fe',
-                  color: '#6b21a8',
-                  fontSize: '11px',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontWeight: 500,
-                }}
-              >
+        <div>
+          <h3 className="section-title">Protected Destinations</h3>
+          <div className="sites-list">
+            {['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Grok'].map((site) => (
+              <span key={site} className="site-badge">
                 {site}
               </span>
             ))}
@@ -620,38 +383,18 @@ function Popup() {
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            borderTop: '1px solid #e5e7eb',
-            paddingTop: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
+        <div className="footer">
           <a
             href="https://niyantra.com"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              padding: '8px',
-              background: '#f3f4f6',
-              borderRadius: '6px',
-              color: '#374151',
-              fontSize: '12px',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
+            className="learn-more-link"
           >
-            <FileText size={14} />
+            <FileText size={16} />
             Learn More About Niyantra
           </a>
-          <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center' }}>
-            v2.0.0 • Enterprise AI Governance
+          <p className="version-text">
+            v1.0.3 • Enterprise AI Governance
           </p>
         </div>
       </div>
@@ -660,3 +403,4 @@ function Popup() {
 }
 
 export default Popup;
+

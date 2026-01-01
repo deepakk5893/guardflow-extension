@@ -10,9 +10,12 @@
 
 // ============== Types ==============
 
+export type PIITier = 'critical' | 'sensitive' | 'contextual';
+
 export interface PIIDetection {
   type: string;
   category: 'hard' | 'soft';
+  tier: PIITier;
   start: number;
   end: number;
   preview: string;
@@ -20,12 +23,19 @@ export interface PIIDetection {
   framework?: string;
   confidence: number;
   line_number?: number;
+  allow_override: boolean;
 }
 
 export interface RedactedSpan {
   start: number;
   end: number;
   replacement: string;
+}
+
+export interface OverrideConfig {
+  allow_override_tiers: PIITier[];
+  require_reason: boolean;
+  has_overridable_detections: boolean;
 }
 
 export interface ScanMessageResponse {
@@ -36,6 +46,7 @@ export interface ScanMessageResponse {
   redacted_spans: RedactedSpan[];
   summary: Record<string, any>;
   scan_time_ms: number;
+  override_config?: OverrideConfig;
 }
 
 export interface ScanFileResponse {
@@ -46,6 +57,21 @@ export interface ScanFileResponse {
   extracted_text?: string;
   summary: Record<string, any>;
   scan_time_ms: number;
+  override_config?: OverrideConfig;
+}
+
+export interface LogOverrideRequest {
+  pii_type: string;
+  pii_tier: PIITier;
+  detected_text_hash?: string;
+  reason?: string;
+  platform: string;
+  detection_source: 'text' | 'document';
+}
+
+export interface LogOverrideResponse {
+  logged: boolean;
+  override_id?: number;
 }
 
 export interface ExtensionConfig {
@@ -357,6 +383,34 @@ class NiyantraApiClient {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Log when user clicks "Send Anyway" to bypass PII detection
+   * Uses background script to make HTTP request (avoids PNA restrictions)
+   */
+  async logOverride(request: LogOverrideRequest): Promise<LogOverrideResponse> {
+    if (!this.isConfigured()) {
+      throw new Error('API client not configured');
+    }
+
+    if (!isExtensionContextValid()) {
+      throw new Error('Extension context invalidated. Please reload the page.');
+    }
+
+    // Send message to background script to make the HTTP request
+    const response = await chrome.runtime.sendMessage({
+      type: 'API_REQUEST',
+      endpoint: '/api/v1/extension/log-override',
+      method: 'POST',
+      body: request,
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
   }
 }
 

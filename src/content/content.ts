@@ -13,8 +13,9 @@ import { getCurrentSiteConfig, waitForSiteReady } from './site-configs';
 import {
   showEnhancedWarningDialog,
   showScanningOverlay,
+  type OverrideResult,
 } from './dialog';
-import { apiClient, type PIIDetection } from './api-client';
+import { apiClient, type PIIDetection, type OverrideConfig } from './api-client';
 import { initFileInterceptor, getFileStats } from './file-interceptor';
 
 // Track if we're currently processing a submission
@@ -29,6 +30,7 @@ type ScanMode = 'local' | 'server' | 'hybrid';
 interface Stats {
   secretsDetected: number;
   secretsBlocked: number;
+  secretsOverridden: number;
   messagesSent: number;
   serverScans: number;
   serverErrors: number;
@@ -37,6 +39,7 @@ interface Stats {
 const stats: Stats = {
   secretsDetected: 0,
   secretsBlocked: 0,
+  secretsOverridden: 0,
   messagesSent: 0,
   serverScans: 0,
   serverErrors: 0,
@@ -49,6 +52,7 @@ interface ScanResult {
   detections: PIIDetection[];
   redactedText?: string;
   source: 'local' | 'server' | 'hybrid';
+  overrideConfig?: OverrideConfig;
   fileViolations?: Array<{
     filename: string;
     detections: PIIDetection[];
@@ -87,11 +91,13 @@ async function performScan(
       detections: localResult.secrets.map((s) => ({
         type: s.type,
         category: 'hard' as const,
+        tier: 'critical' as const,
         start: s.index,
         end: s.index + s.length,
         preview: s.preview,
         severity: s.severity || 'high',
         confidence: 1.0,
+        allow_override: false,
       })),
       redactedText: undefined,
       source: 'local',
@@ -115,11 +121,13 @@ async function performScan(
         detections: localResult.secrets.map((s) => ({
           type: s.type,
           category: 'hard' as const,
+          tier: 'critical' as const,
           start: s.index,
           end: s.index + s.length,
           preview: s.preview,
           severity: s.severity || 'high',
           confidence: 1.0,
+          allow_override: false,
         })),
         redactedText: undefined,
         source: 'local',
@@ -137,6 +145,7 @@ async function performScan(
       detections: serverResponse.detections,
       redactedText: serverResponse.redacted_text,
       source: 'server',
+      overrideConfig: serverResponse.override_config,
     };
   } catch (error) {
     console.warn('[Niyantra] Server scan failed, falling back to local:', error);
@@ -150,11 +159,13 @@ async function performScan(
       detections: localResult.secrets.map((s) => ({
         type: s.type,
         category: 'hard' as const,
+        tier: 'critical' as const,
         start: s.index,
         end: s.index + s.length,
         preview: s.preview,
         severity: s.severity || 'high',
         confidence: 1.0,
+        allow_override: false,
       })),
       redactedText: undefined,
       source: 'local',
@@ -182,11 +193,13 @@ async function handleScanResult(
   }
 
   // Show enhanced dialog with server detections (message + files)
+  // Now includes override config for "Send Anyway" functionality
   const userChoice = await showEnhancedWarningDialog(
     result.detections,
     messageText,
     result.redactedText,
     result.fileViolations,
+    result.overrideConfig,
   );
 
   if (userChoice === 'cancel') {
@@ -220,6 +233,39 @@ async function handleScanResult(
     }
 
     return { action: 'allow', redactedText: result.redactedText };
+  }
+
+  // Handle "Send Anyway" - user chose to bypass overridable detections
+  if (typeof userChoice === 'object' && userChoice.choice === 'send-anyway') {
+    const overrideResult = userChoice as OverrideResult;
+
+    // Log each overridden detection to the server for audit trail
+    if (apiClient.isConfigured() && config) {
+      try {
+        for (const detection of overrideResult.overriddenDetections) {
+          await apiClient.logOverride({
+            pii_type: detection.type,
+            pii_tier: detection.tier || 'contextual',
+            reason: overrideResult.reason,
+            platform: config.name,
+            detection_source: 'text',
+          });
+        }
+        stats.secretsOverridden += overrideResult.overriddenDetections.length;
+        console.log('[Niyantra] Override logged for', overrideResult.overriddenDetections.length, 'items');
+      } catch (error) {
+        console.warn('[Niyantra] Failed to log override:', error);
+        // Still allow the message to be sent even if logging fails
+      }
+    }
+
+    // Clear file inputs with violations (files can't be overridden, only message)
+    if (result.fileViolations && result.fileViolations.length > 0) {
+      clearFileInputs(config);
+    }
+
+    // Allow message to be sent as-is (no redaction)
+    return { action: 'allow' };
   }
 
   // Default: block
@@ -271,11 +317,18 @@ function clearFileInputs(config: ReturnType<typeof getCurrentSiteConfig> | null)
  * Initialize the content script
  */
 async function init() {
+  console.log('[Niyantra] DEBUG: init() called, hostname:', window.location.hostname);
+
   const config = getCurrentSiteConfig();
 
   if (!config) {
+    console.log('[Niyantra] DEBUG: No config found for hostname');
     return;
   }
+
+  console.log('[Niyantra] DEBUG: Config found:', config.name);
+  console.log('[Niyantra] DEBUG: Textarea selector:', config.textarea);
+  console.log('[Niyantra] DEBUG: Submit button selector:', config.submitButton);
 
   // Initialize API client for server-side scanning
   try {
@@ -289,12 +342,20 @@ async function init() {
     console.warn('[Niyantra] Failed to initialize API client:', e);
   }
 
+  // Check what elements exist right now
+  console.log('[Niyantra] DEBUG: Textarea exists?', !!document.querySelector(config.textarea));
+  console.log('[Niyantra] DEBUG: Submit button exists?', !!document.querySelector(config.submitButton));
+
   // Wait for site to be ready
+  console.log('[Niyantra] DEBUG: Waiting for site to be ready...');
   const isReady = await waitForSiteReady(config, 10000);
 
   if (!isReady) {
+    console.log('[Niyantra] DEBUG: Site not ready after 10s timeout - STOPPING');
     return;
   }
+
+  console.log('[Niyantra] DEBUG: Site is ready, continuing initialization...');
 
   // Setup submit button interception
   setupSubmitInterception(config);

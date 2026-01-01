@@ -142,19 +142,17 @@ export const SITE_CONFIGS: Record<string, SiteConfig> = {
     },
   },
 
-  // Grok (by xAI)
+  // Grok (by xAI) - uses ProseMirror/TipTap contenteditable
   'grok.com': {
     name: 'Grok',
-    textarea: 'textarea[aria-label="Ask Grok anything"]',
+    textarea: 'div.ProseMirror[contenteditable="true"]',
     submitButton: 'button[aria-label="Submit"]',
     getMessageText: (element: HTMLElement) => {
-      if (element instanceof HTMLTextAreaElement) {
-        return element.value;
-      }
-      return element.textContent || '';
+      // Grok uses ProseMirror contenteditable div
+      return element.innerText || element.textContent || '';
     },
     isReady: () => {
-      return !!document.querySelector('textarea[aria-label="Ask Grok anything"]');
+      return !!document.querySelector('div.ProseMirror[contenteditable="true"]');
     },
   },
 };
