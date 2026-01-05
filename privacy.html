@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Niyantra Extension</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f8f9fa;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      color: #1a1a1a;
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    .updated {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    h2 {
+      color: #2563eb;
+      font-size: 1.3rem;
+      margin-top: 30px;
+      margin-bottom: 12px;
+    }
+    h3 {
+      color: #444;
+      font-size: 1.1rem;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    p {
+      margin-bottom: 12px;
+      color: #444;
+    }
+    ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    li {
+      margin-bottom: 8px;
+      color: #444;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f3f4f6;
+      font-weight: 600;
+      color: #374151;
+    }
+    td {
+      color: #4b5563;
+    }
+    .highlight {
+      background: #fef3c7;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    .highlight p {
+      margin: 0;
+      color: #92400e;
+    }
+    .contact {
+      background: #eff6ff;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    .contact a {
+      color: #2563eb;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      width: 48px;
+      height: 48px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="public/icons/icon128.png" alt="Niyantra Logo" onerror="this.style.display='none'">
+      <h1>Privacy Policy</h1>
+    </div>
+    <p class="updated">Last Updated: January 5, 2026</p>
+
+    <h2>Overview</h2>
+    <p>Niyantra is a browser extension that detects and prevents accidental leaks of secrets and sensitive data (PII) in AI chat interfaces like ChatGPT, Claude, Gemini, Perplexity, and Grok. We take your privacy seriously.</p>
+
+    <h2>Operating Modes</h2>
+    <p>Niyantra operates in two modes:</p>
+
+    <h3>1. Local-Only Mode (Default)</h3>
+    <p>By default, Niyantra processes all data <strong>locally on your device</strong>:</p>
+    <ul>
+      <li>Secret detection runs entirely within your browser using regex patterns</li>
+      <li><strong>No data is sent to any external server</strong></li>
+      <li>No internet connection required for detection</li>
+      <li>This is the default mode when no server is configured</li>
+    </ul>
+
+    <h3>2. Enterprise Server Mode (Optional)</h3>
+    <p>When you configure an enterprise server URL and API key in settings:</p>
+    <ul>
+      <li>Message text may be sent to your organization's server for enhanced scanning</li>
+      <li>File attachments may be sent for OCR and PII detection</li>
+      <li>The server returns detection results and optionally redacted versions</li>
+      <li><strong>Only your organization's server receives this data</strong> - not Niyantra or any third party</li>
+    </ul>
+
+    <h2>Data Collection & Storage</h2>
+
+    <h3>Local Storage Only</h3>
+    <p>Niyantra stores only statistical counters in your browser using <code>chrome.storage.local</code>:</p>
+    <ul>
+      <li>Number of secrets/PII detected</li>
+      <li>Number of submissions blocked</li>
+      <li>Number of messages sent</li>
+      <li>Server configuration (URL and API key, if configured)</li>
+    </ul>
+    <p><strong>This data never leaves your device</strong> unless you configure enterprise server mode.</p>
+
+    <h3>What We Do NOT Store</h3>
+    <ul>
+      <li>Message content (analyzed in real-time, immediately discarded)</li>
+      <li>Detected secrets or PII values</li>
+      <li>Chat history or conversation content</li>
+      <li>Browsing history or activity</li>
+    </ul>
+
+    <h2>Data Transmission (Enterprise Mode Only)</h2>
+    <p>When enterprise server mode is enabled, the following may be transmitted to your configured server:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>When Sent</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Message text</td>
+          <td>When you send a message</td>
+          <td>PII/secret scanning</td>
+        </tr>
+        <tr>
+          <td>File content (base64)</td>
+          <td>When you attach files</td>
+          <td>Document scanning</td>
+        </tr>
+        <tr>
+          <td>Statistics (counts only)</td>
+          <td>Every 5 minutes</td>
+          <td>Usage monitoring</td>
+        </tr>
+        <tr>
+          <td>Override events</td>
+          <td>When you click "Send Anyway"</td>
+          <td>Audit logging</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      <p><strong>Important:</strong> This data is sent ONLY to the server URL you configure, which should be your organization's own backend. We (Niyantra developers) do not receive or have access to this data.</p>
+    </div>
+
+    <h2>Permissions Explained</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Permission</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>storage</code></td>
+          <td>Save local statistics and settings</td>
+        </tr>
+        <tr>
+          <td><code>activeTab</code></td>
+          <td>Detect which AI platform you're using</td>
+        </tr>
+        <tr>
+          <td><code>alarms</code></td>
+          <td>Schedule heartbeat pings to enterprise server (if configured)</td>
+        </tr>
+        <tr>
+          <td>Host permissions</td>
+          <td>Inject content script to intercept messages before sending</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>What We Detect</h2>
+    <p>Niyantra detects 50+ secret patterns including:</p>
+    <ul>
+      <li><strong>API Keys:</strong> OpenAI, Anthropic, AWS, Google, GitHub, Stripe, etc.</li>
+      <li><strong>Database Credentials:</strong> PostgreSQL, MongoDB, Redis, MySQL connection strings</li>
+      <li><strong>Private Keys:</strong> SSH, PEM, RSA keys</li>
+      <li><strong>Authentication:</strong> JWT tokens, OAuth tokens, passwords</li>
+      <li><strong>Personal Data (PII):</strong> Email, phone, Aadhaar, PAN, credit cards (with enterprise server)</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <ul>
+      <li><strong>Local Mode:</strong> No third-party services are contacted</li>
+      <li><strong>Enterprise Mode:</strong> Only your organization's configured server is contacted</li>
+    </ul>
+    <p>We do not integrate with any analytics, advertising, or tracking platforms.</p>
+
+    <h2>Data Security</h2>
+    <ul>
+      <li>All server communication uses HTTPS encryption</li>
+      <li>API keys are stored locally in browser storage (not accessible to websites)</li>
+      <li>No data is transmitted without explicit user configuration</li>
+      <li>Enterprise servers should be hosted within your organization's infrastructure</li>
+    </ul>
+
+    <h2>User Rights</h2>
+    <p>You can:</p>
+    <ul>
+      <li>Use the extension in local-only mode with zero data transmission</li>
+      <li>Clear all stored data by removing the extension</li>
+      <li>Disable the extension for specific sites</li>
+      <li>View all stored data via browser developer tools</li>
+    </ul>
+
+    <h2>Children's Privacy</h2>
+    <p>This extension is intended for professional use and does not knowingly collect data from children under 13.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>We may update this policy when adding features. Changes will be communicated via extension updates. Continued use after updates constitutes acceptance.</p>
+
+    <div class="contact">
+      <h2>Contact</h2>
+      <p>For privacy questions or data requests, contact: <a href="mailto:deepakk5893@gmail.com">deepakk5893@gmail.com</a></p>
+    </div>
+
+    <h2>Important Note</h2>
+    <p>This extension is provided as-is for security awareness. Always review your messages for sensitive information before sending to AI services, regardless of this tool's detection capabilities.</p>
+  </div>
+</body>
+</html>
