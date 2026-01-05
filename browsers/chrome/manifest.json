@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Niyantra - AI Chat Security & PII Protection",
   "version": "2.0.0",
-  "description": "Enterprise AI governance. Detects & blocks secrets, PII, and sensitive data in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redaction for compliance.",
+  "description": "Block secrets & PII in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redact sensitive data before sending.",
   "permissions": [
     "storage",
     "activeTab",
