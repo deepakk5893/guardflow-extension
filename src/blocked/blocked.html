@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Blocked - Niyantra</title>
+  <link rel="stylesheet" href="blocked.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <!-- Shield Icon -->
+      <div class="icon-container">
+        <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7V12C3 17.5 6.84 22.74 12 24C17.16 22.74 21 17.5 21 12V7L12 2Z" fill="currentColor" opacity="0.2"/>
+          <path d="M12 2L3 7V12C3 17.5 6.84 22.74 12 24C17.16 22.74 21 17.5 21 12V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h1 class="title">Access Blocked</h1>
+
+      <!-- Site Name -->
+      <div class="site-info">
+        <span class="site-name" id="siteName">Loading...</span>
+        <span class="site-category" id="siteCategory"></span>
+      </div>
+
+      <!-- Message -->
+      <p class="message">
+        This AI tool is not authorized for use in your organization.
+        Using unauthorized AI tools may expose sensitive company data to third parties.
+      </p>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button id="goBack" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Go Back
+        </button>
+        <button id="closeTab" class="btn btn-secondary">
+          Close Tab
+        </button>
+      </div>
+
+      <!-- Alternative -->
+      <div class="alternative">
+        <p>Need AI assistance? Use your organization's approved AI tools.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-content">
+        <span class="footer-logo">
+          <svg class="footer-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3 7V12C3 17.5 6.84 22.74 12 24C17.16 22.74 21 17.5 21 12V7L12 2Z" fill="currentColor"/>
+          </svg>
+          Niyantra
+        </span>
+        <span class="footer-text">Enterprise AI Security</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="blocked.js" type="module"></script>
+</body>
+</html>

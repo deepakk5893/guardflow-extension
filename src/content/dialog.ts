@@ -58,6 +58,7 @@ const TIER_STYLES = {
 /**
  * Show scanning overlay while waiting for server response
  * Returns a function to remove the overlay
+ * Shows progress messages for longer scans to indicate the extension isn't stuck
  */
 export function showScanningOverlay(): () => void {
   const overlay = document.createElement('div');
@@ -80,6 +81,7 @@ export function showScanningOverlay(): () => void {
     border-radius: 16px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     text-align: center;
+    min-width: 280px;
   `;
 
   // Spinner
@@ -117,7 +119,28 @@ export function showScanningOverlay(): () => void {
   overlay.appendChild(card);
   document.body.appendChild(overlay);
 
+  // Progress messages for longer scans - so user knows extension isn't stuck
+  const progressMessages = [
+    { delay: 5000, message: 'Processing document...', subMessage: 'Large files may take a moment' },
+    { delay: 10000, message: 'Still scanning...', subMessage: 'Extracting text and checking for PII' },
+    { delay: 20000, message: 'Almost done...', subMessage: 'Analyzing detected content' },
+  ];
+
+  const timeouts: number[] = [];
+  progressMessages.forEach(({ delay, message, subMessage }) => {
+    const timeoutId = window.setTimeout(() => {
+      if (overlay.parentNode) {
+        text.textContent = message;
+        subtext.textContent = subMessage;
+      }
+    }, delay);
+    timeouts.push(timeoutId);
+  });
+
   return () => {
+    // Clear all progress timeouts
+    timeouts.forEach(id => window.clearTimeout(id));
+
     if (overlay.parentNode) {
       overlay.parentNode.removeChild(overlay);
     }

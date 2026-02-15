@@ -8,6 +8,8 @@
  * - Configuration sync
  */
 
+import { storageGet, storageSet } from '../utils/storage';
+
 // ============== Types ==============
 
 export type PIITier = 'critical' | 'sensitive' | 'contextual';
@@ -86,7 +88,10 @@ export interface ExtensionConfig {
   allow_send_anyway: boolean;
   custom_blocked_message?: string;
   tenant_name?: string;
+  enforcement_mode: 'enforce' | 'log_only';
 }
+
+export type EnforcementMode = 'enforce' | 'log_only';
 
 export interface ValidateKeyResponse {
   valid: boolean;
@@ -113,6 +118,39 @@ function isExtensionContextValid(): boolean {
   }
 }
 
+/**
+ * Send a message to the background script with a timeout
+ * Prevents hanging if the background script doesn't respond
+ */
+async function sendMessageWithTimeout<T>(
+  message: Record<string, unknown>,
+  timeoutMs: number = 15000
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Background script timeout after ${timeoutMs}ms. Server may be down.`));
+    }, timeoutMs);
+
+    chrome.runtime.sendMessage(message, (response) => {
+      clearTimeout(timeoutId);
+
+      // Check for chrome runtime errors
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message || 'Extension communication failed'));
+        return;
+      }
+
+      // Check if we got a response at all
+      if (response === undefined) {
+        reject(new Error('No response from background script'));
+        return;
+      }
+
+      resolve(response as T);
+    });
+  });
+}
+
 // ============== API Client ==============
 
 class NiyantraApiClient {
@@ -126,7 +164,7 @@ class NiyantraApiClient {
    */
   async initialize(): Promise<void> {
     try {
-      const settings = await chrome.storage.local.get(['serverUrl', 'apiKey']);
+      const settings = await storageGet(['serverUrl', 'apiKey']);
       this.baseUrl = settings.serverUrl || '';
       this.apiKey = settings.apiKey || '';
       this.initialized = true;
@@ -171,7 +209,7 @@ class NiyantraApiClient {
   async updateSettings(serverUrl: string, apiKey: string): Promise<void> {
     this.baseUrl = serverUrl;
     this.apiKey = apiKey;
-    await chrome.storage.local.set({ serverUrl, apiKey });
+    await storageSet({ serverUrl, apiKey });
 
     // Fetch new config
     if (this.isConfigured()) {
@@ -214,8 +252,8 @@ class NiyantraApiClient {
       throw new Error('Extension context invalidated. Please reload the page.');
     }
 
-    // Send message to background script to make the HTTP request
-    const response = await chrome.runtime.sendMessage({
+    // Send message to background script with timeout (10s for message scans)
+    const response = await sendMessageWithTimeout<{ data?: ScanMessageResponse; error?: string }>({
       type: 'API_REQUEST',
       endpoint: '/api/v1/extension/scan-message',
       method: 'POST',
@@ -225,10 +263,14 @@ class NiyantraApiClient {
         mode: 'server_full',
         include_redacted_text: true,
       },
-    });
+    }, 10000);
 
     if (response.error) {
       throw new Error(response.error);
+    }
+
+    if (!response.data) {
+      throw new Error('No data in response from server');
     }
 
     return response.data;
@@ -252,8 +294,10 @@ class NiyantraApiClient {
       throw new Error('Extension context invalidated. Please reload the page.');
     }
 
-    // Send message to background script to make the HTTP request
-    const response = await chrome.runtime.sendMessage({
+    // Send message to background script with timeout
+    // 45s timeout: background does 2s health check + up to 30s for actual scan + buffer
+    // Large files with OCR can take 20-30 seconds to process
+    const response = await sendMessageWithTimeout<{ data?: ScanFileResponse; error?: string }>({
       type: 'API_REQUEST',
       endpoint: '/api/v1/extension/scan-file',
       method: 'POST',
@@ -264,10 +308,14 @@ class NiyantraApiClient {
         platform,
         include_redacted_document: true,
       },
-    });
+    }, 45000);
 
     if (response.error) {
       throw new Error(response.error);
+    }
+
+    if (!response.data) {
+      throw new Error('No data in response from server');
     }
 
     return response.data;
@@ -319,19 +367,23 @@ class NiyantraApiClient {
       throw new Error('Extension context invalidated. Please reload the page.');
     }
 
-    // Send message to background script to make the HTTP request
-    const response = await chrome.runtime.sendMessage({
+    // Send message to background script with timeout (5s for config)
+    const response = await sendMessageWithTimeout<{ data?: ExtensionConfig; error?: string }>({
       type: 'API_REQUEST',
       endpoint: '/api/v1/extension/config',
       method: 'GET',
-    });
+    }, 5000);
 
     if (response.error) {
       throw new Error(response.error);
     }
 
+    if (!response.data) {
+      throw new Error('No config data in response');
+    }
+
     this.config = response.data;
-    return this.config!;
+    return this.config;
   }
 
   /**
@@ -398,19 +450,96 @@ class NiyantraApiClient {
       throw new Error('Extension context invalidated. Please reload the page.');
     }
 
-    // Send message to background script to make the HTTP request
-    const response = await chrome.runtime.sendMessage({
+    // Send message to background script with timeout (5s for logging)
+    const response = await sendMessageWithTimeout<{ data?: LogOverrideResponse; error?: string }>({
       type: 'API_REQUEST',
       endpoint: '/api/v1/extension/log-override',
       method: 'POST',
       body: request,
-    });
+    }, 5000);
 
     if (response.error) {
       throw new Error(response.error);
     }
 
+    if (!response.data) {
+      throw new Error('No data in response');
+    }
+
     return response.data;
+  }
+
+  /**
+   * Get current enforcement mode
+   * Returns 'enforce' (default - block/warn) or 'log_only' (silent monitoring)
+   */
+  getEnforcementMode(): EnforcementMode {
+    return this.config?.enforcement_mode || 'enforce';
+  }
+
+  /**
+   * Check if in log-only (monitoring) mode
+   */
+  isLogOnlyMode(): boolean {
+    return this.getEnforcementMode() === 'log_only';
+  }
+
+  /**
+   * Fire-and-forget text logging for monitoring mode
+   * Sends message to backend async, never blocks
+   */
+  async logMessage(text: string, platform: string): Promise<void> {
+    if (!this.isConfigured()) {
+      return; // Silently skip if not configured
+    }
+
+    if (!isExtensionContextValid()) {
+      console.warn('[Niyantra] Extension context invalid, skipping log');
+      return;
+    }
+
+    // Fire and forget - send to background script
+    try {
+      chrome.runtime.sendMessage({
+        type: 'LOG_MESSAGE_MONITORING',
+        body: {
+          text,
+          platform,
+        },
+      });
+    } catch (e) {
+      console.warn('[Niyantra] Failed to log message:', e);
+    }
+  }
+
+  /**
+   * Parallel file upload for monitoring mode
+   * Uploads to Niyantra while letting original upload proceed
+   */
+  async logFile(document: string, mimeType: string, filename: string, platform: string): Promise<void> {
+    if (!this.isConfigured()) {
+      return; // Silently skip if not configured
+    }
+
+    if (!isExtensionContextValid()) {
+      console.warn('[Niyantra] Extension context invalid, skipping file log');
+      return;
+    }
+
+    // Fire and forget - send to background script
+    try {
+      chrome.runtime.sendMessage({
+        type: 'LOG_FILE_MONITORING',
+        body: {
+          document,
+          mime_type: mimeType,
+          filename,
+          platform,
+        },
+      });
+    } catch (e) {
+      console.warn('[Niyantra] Failed to log file:', e);
+    }
   }
 }
 

@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "serverUrl": {
+      "title": "Server URL",
+      "description": "Niyantra server URL for your organization",
+      "type": "string"
+    },
+    "tenantToken": {
+      "title": "Tenant Token",
+      "description": "Organization token for authentication (get from Niyantra dashboard)",
+      "type": "string"
+    },
+    "authMode": {
+      "title": "Authentication Mode",
+      "description": "How users authenticate: 'sso' for Single Sign-On, 'token' for API key",
+      "type": "string",
+      "enum": ["sso", "token"]
+    },
+    "ssoProvider": {
+      "title": "SSO Provider",
+      "description": "SSO provider to use (google, microsoft, okta)",
+      "type": "string",
+      "enum": ["google", "microsoft", "okta"]
+    },
+    "tenantName": {
+      "title": "Organization Name",
+      "description": "Your organization name for display",
+      "type": "string"
+    },
+    "enforcementMode": {
+      "title": "Enforcement Mode",
+      "description": "'enforce' to block PII, 'log_only' for monitoring mode",
+      "type": "string",
+      "enum": ["enforce", "log_only"]
+    }
+  }
+}

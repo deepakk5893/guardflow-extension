@@ -16,10 +16,5 @@ export default defineConfig({
   },
   build: {
     outDir: '../../dist-chrome',
-    rollupOptions: {
-      input: {
-        popup: resolve(__dirname, 'public/popup.html'),
-      },
-    },
   },
 });

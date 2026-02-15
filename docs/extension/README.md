@@ -246,4 +246,4 @@ See [LICENSE](../../LICENSE)
 
 - Report issues: GitHub Issues
 - Questions: [Niyantra Slack]
-- Security: security@niyantra.com
+- Security: admin@guardflow.tech

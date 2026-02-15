@@ -1,13 +1,13 @@
 {
   "name": "guardflow-extension",
-  "version": "1.0.3",
+  "version": "2.3.0",
   "description": "Prevent accidental secret leaks to ChatGPT, Claude, and other AI services",
   "type": "module",
   "scripts": {
     "dev:chrome": "cd browsers/chrome && vite build --watch --mode development",
     "dev:firefox": "cd browsers/firefox && vite build --watch --mode development",
-    "build:chrome": "cd browsers/chrome && tsc && vite build",
-    "build:firefox": "cd browsers/firefox && tsc && vite build",
+    "build:chrome": "cd browsers/chrome && tsc && vite build && cp ../../src/blocked/blocked.css ../../dist-chrome/blocked/blocked.css && cp managed_schema.json ../../dist-chrome/managed_schema.json",
+    "build:firefox": "cd browsers/firefox && tsc && vite build && cp ../../src/blocked/blocked.css ../../dist-firefox/blocked/blocked.css",
     "build:all": "npm run build:chrome && npm run build:firefox",
     "build": "npm run build:chrome",
     "test": "jest",

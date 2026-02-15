@@ -14,6 +14,7 @@
 
 import { apiClient, type ScanFileResponse, type PIIDetection } from './api-client';
 import { showScanningOverlay } from './dialog';
+import { storageGet } from '../utils/storage';
 
 // ============== Types ==============
 
@@ -589,6 +590,24 @@ async function scanFile(
     return { allowed: true };
   }
 
+  // Check if backend is known to be down (from heartbeat status)
+  // If backend is down, skip scan immediately - don't show overlay, don't wait
+  try {
+    const storage = await storageGet(['lastHeartbeat']);
+    if (storage.lastHeartbeat) {
+      const { success, timestamp } = storage.lastHeartbeat;
+      const timeSinceHeartbeat = Date.now() - timestamp;
+      // If heartbeat failed in last 2 minutes, backend is down - skip scan
+      if (!success && timeSinceHeartbeat < 120000) {
+        console.log('[Niyantra] Backend down (heartbeat failed), allowing file through without scan');
+        return { allowed: true };
+      }
+    }
+  } catch (e) {
+    // If we can't check storage, proceed with scan
+    console.warn('[Niyantra] Could not check heartbeat status:', e);
+  }
+
   fileStats.filesScanned++;
 
   // Show scanning overlay
@@ -672,6 +691,22 @@ async function interceptFileInput(
       const files = input.files;
       if (!files || files.length === 0) return;
 
+      // MONITORING MODE: Upload to Niyantra in parallel, allow through immediately
+      if (apiClient.isLogOnlyMode()) {
+        // Fire-and-forget: Upload each file to Niyantra for logging
+        for (const file of Array.from(files)) {
+          if (!SUPPORTED_MIME_TYPES.includes(file.type)) continue;
+          try {
+            const base64 = await fileToBase64(file);
+            apiClient.logFile(base64, file.type, file.name, platform);  // Async, non-blocking
+          } catch (e) {
+            console.warn('[Niyantra] Failed to log file:', file.name, e);
+          }
+        }
+        // Allow event to proceed naturally - no blocking, no UI
+        return;
+      }
+
       // Check if ALL files are already approved (redacted versions we added)
       const allApproved = Array.from(files).every(f => isFileApproved(f));
       if (allApproved) {
@@ -753,6 +788,9 @@ async function interceptFileInput(
 
       // If we have allowed files, re-add them
       if (allowedFiles.length > 0) {
+        // Mark all allowed files as approved so our handler skips them on re-dispatch
+        markFilesAsApproved(allowedFiles);
+
         const dt = new DataTransfer();
         allowedFiles.forEach((f) => dt.items.add(f));
         input.files = dt.files;
@@ -791,6 +829,22 @@ function interceptDragDrop(
       }
 
       const files = Array.from(dataTransfer.files);
+
+      // MONITORING MODE: Upload to Niyantra in parallel, allow through immediately
+      if (apiClient.isLogOnlyMode()) {
+        // Fire-and-forget: Upload each file to Niyantra for logging
+        for (const file of files) {
+          if (!SUPPORTED_MIME_TYPES.includes(file.type)) continue;
+          try {
+            const base64 = await fileToBase64(file);
+            apiClient.logFile(base64, file.type, file.name, platform);  // Async, non-blocking
+          } catch (e) {
+            console.warn('[Niyantra] Failed to log dropped file:', file.name, e);
+          }
+        }
+        // Allow event to proceed naturally - no blocking, no UI
+        return;
+      }
 
       // Check if ALL files are already approved (redacted versions we added)
       const allApproved = files.every(f => isFileApproved(f));
@@ -864,6 +918,9 @@ function interceptDragDrop(
 
       // If we have allowed files, create a new drop event for them
       if (allowedFiles.length > 0) {
+        // Mark all allowed files as approved so our handler skips them on re-dispatch
+        markFilesAsApproved(allowedFiles);
+
         const newDataTransfer = new DataTransfer();
         allowedFiles.forEach((f) => newDataTransfer.items.add(f));
 

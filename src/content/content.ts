@@ -17,6 +17,7 @@ import {
 } from './dialog';
 import { apiClient, type PIIDetection, type OverrideConfig } from './api-client';
 import { initFileInterceptor, getFileStats } from './file-interceptor';
+import { storageGet, storageSet } from '../utils/storage';
 
 // Track if we're currently processing a submission
 let isProcessingSubmit = false;
@@ -65,7 +66,7 @@ interface ScanResult {
  */
 async function getScanMode(): Promise<ScanMode> {
   try {
-    const result = await chrome.storage.local.get('scanMode');
+    const result = await storageGet(['scanMode']);
     return result.scanMode || 'hybrid'; // Default to hybrid
   } catch {
     return 'hybrid';
@@ -317,18 +318,11 @@ function clearFileInputs(config: ReturnType<typeof getCurrentSiteConfig> | null)
  * Initialize the content script
  */
 async function init() {
-  console.log('[Niyantra] DEBUG: init() called, hostname:', window.location.hostname);
-
   const config = getCurrentSiteConfig();
 
   if (!config) {
-    console.log('[Niyantra] DEBUG: No config found for hostname');
     return;
   }
-
-  console.log('[Niyantra] DEBUG: Config found:', config.name);
-  console.log('[Niyantra] DEBUG: Textarea selector:', config.textarea);
-  console.log('[Niyantra] DEBUG: Submit button selector:', config.submitButton);
 
   // Initialize API client for server-side scanning
   try {
@@ -342,20 +336,12 @@ async function init() {
     console.warn('[Niyantra] Failed to initialize API client:', e);
   }
 
-  // Check what elements exist right now
-  console.log('[Niyantra] DEBUG: Textarea exists?', !!document.querySelector(config.textarea));
-  console.log('[Niyantra] DEBUG: Submit button exists?', !!document.querySelector(config.submitButton));
-
   // Wait for site to be ready
-  console.log('[Niyantra] DEBUG: Waiting for site to be ready...');
   const isReady = await waitForSiteReady(config, 10000);
 
   if (!isReady) {
-    console.log('[Niyantra] DEBUG: Site not ready after 10s timeout - STOPPING');
     return;
   }
-
-  console.log('[Niyantra] DEBUG: Site is ready, continuing initialization...');
 
   // Setup submit button interception
   setupSubmitInterception(config);
@@ -437,6 +423,20 @@ async function handleGlobalEnterKey(
       return; // Not our target
     }
 
+    // Get message text early for log_only mode check
+    const messageText = config.getMessageText(textarea);
+
+    // Skip empty messages
+    if (!messageText || messageText.trim().length === 0) {
+      return;
+    }
+
+    // MONITORING MODE: Log and allow through immediately (no blocking, no UI)
+    if (apiClient.isLogOnlyMode()) {
+      apiClient.logMessage(messageText, config.name);  // Fire-and-forget
+      return;  // Allow event to proceed naturally
+    }
+
     // If we're allowing the next submit, let it through
     if (allowNextSubmit) {
       allowNextSubmit = false;
@@ -448,14 +448,6 @@ async function handleGlobalEnterKey(
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      return;
-    }
-
-    // Get message text
-    const messageText = config.getMessageText(textarea);
-
-    // Skip empty messages
-    if (!messageText || messageText.trim().length === 0) {
       return;
     }
 
@@ -564,17 +556,6 @@ function attachSubmitHandler(
   button.addEventListener(
     'click',
     async (event) => {
-      // If we're allowing the next submit (user chose to send or send-redacted), let it through
-      if (allowNextSubmit) {
-        allowNextSubmit = false;
-        return;
-      }
-
-      // Only intercept if not already processing
-      if (isProcessingSubmit) {
-        return;
-      }
-
       // Get the textarea
       const textarea = document.querySelector(config.textarea) as HTMLElement;
       if (!textarea) {
@@ -586,6 +567,23 @@ function attachSubmitHandler(
 
       // Skip empty messages
       if (!messageText || messageText.trim().length === 0) {
+        return;
+      }
+
+      // MONITORING MODE: Log and allow through immediately (no blocking, no UI)
+      if (apiClient.isLogOnlyMode()) {
+        apiClient.logMessage(messageText, config.name);  // Fire-and-forget
+        return;  // Allow click to proceed naturally
+      }
+
+      // If we're allowing the next submit (user chose to send or send-redacted), let it through
+      if (allowNextSubmit) {
+        allowNextSubmit = false;
+        return;
+      }
+
+      // Only intercept if not already processing
+      if (isProcessingSubmit) {
         return;
       }
 
@@ -652,7 +650,7 @@ function attachSubmitHandler(
  */
 async function saveStats() {
   try {
-    await chrome.storage.local.set({ stats });
+    await storageSet({ stats });
   } catch (error) {
     // Silently fail
   }
@@ -663,7 +661,7 @@ async function saveStats() {
  */
 async function loadStats() {
   try {
-    const result = await chrome.storage.local.get('stats');
+    const result = await storageGet(['stats']);
     if (result.stats) {
       Object.assign(stats, result.stats);
     }

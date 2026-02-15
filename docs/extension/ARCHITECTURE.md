@@ -205,15 +205,77 @@ input.addEventListener('change', async (event) => {
 
 **No "Send Anyway" option** - Violations are always blocked or redacted, regardless of user role.
 
-### 6. Popup (`src/popup/Popup.tsx`)
+### 6. Enterprise Auth Module (`src/auth/enterprise-auth.ts`)
 
-**Purpose:** Extension settings UI.
+**Purpose:** Handle Chrome Enterprise policy and Google SSO authentication.
+
+**Key Features:**
+- Read Chrome managed policy from `chrome.storage.managed`
+- Authenticate with tenant token
+- Google SSO via `chrome.identity.getAuthToken()`
+- Auto-user provisioning on first SSO login
+
+**Auth Flow Priority:**
+```
+1. Chrome Enterprise Policy (chrome.storage.managed)
+   └─> If serverUrl + tenantToken set, use enterprise auth
+2. Stored Credentials (chrome.storage.local)
+   └─> If serverUrl + apiKey set, use manual auth
+3. Manual Setup Required
+   └─> Show settings UI for user to enter credentials
+```
+
+**Key Functions:**
+```typescript
+// Check Chrome Enterprise policy
+getManagedPolicy(): Promise<ManagedPolicy | null>
+
+// Validate tenant token with backend
+authenticateWithTenantToken(serverUrl, tenantToken): Promise<TenantAuthResponse>
+
+// Get Google OAuth token
+getGoogleAuthToken(interactive: boolean): Promise<string>
+
+// Complete SSO with backend
+authenticateWithGoogleSSO(serverUrl, tenantToken, accessToken): Promise<SSOAuthResponse>
+
+// Main auth flow (policy → stored → manual)
+initializeAuth(): Promise<AuthState>
+
+// Complete SSO login
+completeSSOLogin(serverUrl, tenantToken, ssoProvider): Promise<AuthState>
+
+// Clear credentials
+logout(): Promise<void>
+```
+
+### 7. Popup (`src/popup/Popup.tsx`)
+
+**Purpose:** Extension settings UI with SSO support.
 
 **Features:**
-- Server URL configuration
-- API key input
+- Server URL configuration (manual mode)
+- API key input (manual mode)
 - Connection status indicator
 - Scan mode toggle (Local/Server/Hybrid)
+- **Enterprise banner** (when Chrome policy configured)
+- **"Sign in with Google" button** (when SSO required)
+- **User info display** (after SSO login)
+
+**UI States:**
+
+1. **Not Configured + Not Enterprise:**
+   - Quick Setup banner
+   - Manual Server URL / API Key fields
+
+2. **Enterprise Policy + SSO Required:**
+   - Enterprise banner with org name
+   - "Sign in with Google" button
+
+3. **Enterprise Policy + Authenticated:**
+   - Enterprise banner with org name
+   - User email and auth method
+   - Logout button
 
 **Settings Update Flow:**
 ```typescript
@@ -228,6 +290,23 @@ const saveSettings = async () => {
   })
     └─> Background broadcasts to all tabs
         └─> Content scripts update apiClient settings
+}
+```
+
+**SSO Login Flow:**
+```typescript
+const handleSSOLogin = async () => {
+  const response = await chrome.runtime.sendMessage({
+    type: 'COMPLETE_SSO_LOGIN',
+    serverUrl: authState.serverUrl,
+    tenantToken: authState.tenantToken,
+    ssoProvider: authState.ssoProvider,
+  });
+
+  if (response.success) {
+    setAuthState(response.authState);
+    setConnectionStatus('connected');
+  }
 }
 ```
 
@@ -347,17 +426,27 @@ User Uploads File
 ```json
 {
   "permissions": [
-    "storage",      // Save settings and stats
-    "activeTab",    // Access current tab
-    "alarms"        // Heartbeat timer
+    "storage",         // Save settings and stats
+    "activeTab",       // Access current tab
+    "alarms",          // Heartbeat timer
+    "identity",        // Google SSO via chrome.identity
+    "identity.email",  // Access user email for SSO
+    "webNavigation"    // Shadow AI detection
   ],
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
   "host_permissions": [
     "https://chat.openai.com/*",
     "https://chatgpt.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
     "https://www.perplexity.ai/*",
-    "https://chat.groq.com/*",
+    "https://grok.com/*",
     "https://*.niyantra.com/*",
     "http://localhost:8000/*",      // Development
     "http://127.0.0.1:8000/*"       // Development
@@ -427,3 +516,6 @@ cd browsers/firefox && tsc && vite build
 3. **Audit Logs** - Per-user activity tracking with compliance reports
 4. **Smart Redaction** - ML-powered context-aware redaction
 5. **Multi-Language Support** - i18n for dialog messages
+6. **Microsoft SSO** - Azure AD authentication via chrome.identity
+7. **Okta SSO** - Okta authentication support
+8. **Firefox Enterprise** - Firefox managed storage policy support

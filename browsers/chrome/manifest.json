@@ -1,21 +1,31 @@
 {
   "manifest_version": 3,
   "name": "Niyantra - AI Chat Security & PII Protection",
-  "version": "2.0.0",
-  "description": "Block secrets & PII in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redact sensitive data before sending.",
+  "version": "2.3.0",
+  "description": "Block secrets & PII in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redact sensitive data before sending. Shadow AI detection.",
   "permissions": [
     "storage",
     "activeTab",
-    "alarms"
+    "alarms",
+    "webNavigation",
+    "identity",
+    "identity.email"
   ],
+  "oauth2": {
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  },
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
   "host_permissions": [
-    "https://chat.openai.com/*",
-    "https://chatgpt.com/*",
-    "https://claude.ai/*",
-    "https://gemini.google.com/*",
-    "https://www.perplexity.ai/*",
-    "https://grok.com/*",
-    "https://*.guardflow.tech/*"
+    "https://*.guardflow.tech/*",
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
   ],
   "content_scripts": [
     {
@@ -30,6 +40,12 @@
       "js": ["../../src/content/content.ts"],
       "run_at": "document_end",
       "all_frames": false
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["../../src/shadow-ai/shadow-ai-banner.ts"],
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
   "background": {
@@ -40,14 +56,20 @@
     "default_popup": "public/popup.html",
     "default_title": "Niyantra - AI Security",
     "default_icon": {
-      "16": "public/icons/icon16.png",
-      "48": "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "icons": {
-    "16": "public/icons/icon16.png",
-    "48": "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
-  }
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

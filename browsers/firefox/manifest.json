@@ -1,19 +1,15 @@
 {
   "manifest_version": 2,
   "name": "Niyantra - AI Chat Security & PII Protection",
-  "version": "2.0.0",
-  "description": "Enterprise AI governance. Detects & blocks secrets, PII, and sensitive data in ChatGPT, Claude, Gemini, Perplexity, Grok. Auto-redaction for compliance.",
+  "version": "2.3.0",
+  "description": "Enterprise AI governance. Detects & blocks secrets, PII, and sensitive data in ChatGPT, Claude, Gemini, Perplexity, Grok. Shadow AI detection.",
   "permissions": [
     "storage",
     "activeTab",
     "alarms",
-    "https://chat.openai.com/*",
-    "https://chatgpt.com/*",
-    "https://claude.ai/*",
-    "https://gemini.google.com/*",
-    "https://www.perplexity.ai/*",
-    "https://grok.com/*",
-    "https://*.niyantra.com/*",
+    "webNavigation",
+    "<all_urls>",
+    "https://*.guardflow.tech/*",
     "http://localhost:8000/*",
     "http://127.0.0.1:8000/*"
   ],
@@ -29,6 +25,12 @@
       ],
       "js": ["assets/content.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/shadow-ai-banner.js"],
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
   "background": {
@@ -47,5 +49,8 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    "blocked/*"
+  ]
 }
