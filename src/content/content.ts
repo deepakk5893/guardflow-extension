@@ -9,13 +9,13 @@
  */
 
 import { detectSecrets } from '~/utils/secretDetection';
-import { getCurrentSiteConfig, waitForSiteReady } from './site-configs';
+import { getCurrentSiteConfig, waitForSiteReady, loadServerSiteConfigs } from './site-configs';
 import {
   showEnhancedWarningDialog,
   showScanningOverlay,
   type OverrideResult,
 } from './dialog';
-import { apiClient, type PIIDetection, type OverrideConfig } from './api-client';
+import { apiClient, type PIIDetection, type OverrideConfig, type TokenInfo, type TierAction, type PIITier } from './api-client';
 import { initFileInterceptor, getFileStats } from './file-interceptor';
 import { storageGet, storageSet } from '../utils/storage';
 
@@ -52,6 +52,7 @@ interface ScanResult {
   shouldBlock: boolean;
   detections: PIIDetection[];
   redactedText?: string;
+  tokenMap?: Record<string, TokenInfo>;
   source: 'local' | 'server' | 'hybrid';
   overrideConfig?: OverrideConfig;
   fileViolations?: Array<{
@@ -145,6 +146,7 @@ async function performScan(
       shouldBlock: serverResponse.should_block,
       detections: serverResponse.detections,
       redactedText: serverResponse.redacted_text,
+      tokenMap: serverResponse.token_map,
       source: 'server',
       overrideConfig: serverResponse.override_config,
     };
@@ -178,6 +180,19 @@ async function performScan(
  * Handle scan result and show dialog if needed
  * Returns: 'allow' | 'block' | 'redacted' (with redacted text)
  */
+/**
+ * Get effective tier action for a detection (backward compat with old servers).
+ * Uses tier_action if present; otherwise derives from legacy allow_override + require_reason_tiers.
+ */
+function effectiveTierAction(d: PIIDetection, overrideConfig?: OverrideConfig): TierAction {
+  if (d.tier_action) return d.tier_action;
+  // Backward compat: derive from legacy fields
+  if (!d.allow_override) return 'block';
+  const tier = d.tier || 'critical';
+  if (overrideConfig?.require_reason_tiers?.includes(tier as PIITier)) return 'block_with_override';
+  return 'warn';
+}
+
 async function handleScanResult(
   result: ScanResult,
   messageText: string,
@@ -193,14 +208,28 @@ async function handleScanResult(
     stats.secretsDetected += result.fileViolations.reduce((sum, fv) => sum + fv.detections.length, 0);
   }
 
-  // Show enhanced dialog with server detections (message + files)
-  // Now includes override config for "Send Anyway" functionality
+  // Filter out audit-only detections - they don't trigger a dialog
+  const visibleDetections = result.detections.filter(
+    (d) => effectiveTierAction(d, result.overrideConfig) !== 'audit'
+  );
+
+  // If ALL detections are audit-only, allow through silently (just logging)
+  const allFileAudit = !result.fileViolations || result.fileViolations.every(
+    (fv) => fv.detections.every((d) => effectiveTierAction(d, result.overrideConfig) === 'audit')
+  );
+  if (visibleDetections.length === 0 && allFileAudit) {
+    console.log('[Niyantra] All detections are audit-only, allowing through silently');
+    return { action: 'allow' };
+  }
+
+  // Show enhanced dialog with only visible (non-audit) detections
   const userChoice = await showEnhancedWarningDialog(
-    result.detections,
+    visibleDetections,
     messageText,
     result.redactedText,
     result.fileViolations,
     result.overrideConfig,
+    result.tokenMap,
   );
 
   if (userChoice === 'cancel') {
@@ -247,6 +276,7 @@ async function handleScanResult(
           await apiClient.logOverride({
             pii_type: detection.type,
             pii_tier: detection.tier || 'contextual',
+            override_reason_category: overrideResult.overrideReasonCategory,
             reason: overrideResult.reason,
             platform: config.name,
             detection_source: 'text',
@@ -318,6 +348,14 @@ function clearFileInputs(config: ReturnType<typeof getCurrentSiteConfig> | null)
  * Initialize the content script
  */
 async function init() {
+  // Load server-driven site configs before resolving the current site
+  try {
+    await loadServerSiteConfigs();
+  } catch (e) {
+    // Non-fatal — hardcoded SITE_CONFIGS will be used as fallback
+    console.warn('[Niyantra] Failed to load server site configs:', e);
+  }
+
   const config = getCurrentSiteConfig();
 
   if (!config) {

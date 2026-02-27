@@ -15,6 +15,7 @@
 import { apiClient, type ScanFileResponse, type PIIDetection } from './api-client';
 import { showScanningOverlay } from './dialog';
 import { storageGet } from '../utils/storage';
+import { getServerFileConfig } from './site-configs';
 
 // ============== Types ==============
 
@@ -956,10 +957,25 @@ export function initFileInterceptor(): void {
     return;
   }
 
-  const config = PLATFORM_CONFIGS[platform];
-  if (!config) {
-    console.log('[Niyantra] No config for platform:', platform);
-    return;
+  // Try server-driven file config first, fall back to hardcoded
+  const hostname = window.location.hostname;
+  const serverFileConfig = getServerFileConfig(hostname);
+
+  let config: FileInterceptorConfig;
+  if (serverFileConfig) {
+    config = {
+      platform,
+      fileInputSelector: serverFileConfig.fileInputSelector,
+      dropZoneSelector: serverFileConfig.dropZoneSelector,
+    };
+    console.log('[Niyantra] Using server-driven file config for', platform);
+  } else {
+    const hardcoded = PLATFORM_CONFIGS[platform];
+    if (!hardcoded) {
+      console.log('[Niyantra] No config for platform:', platform);
+      return;
+    }
+    config = hardcoded;
   }
 
   console.log('[Niyantra] Initializing file interceptor for', platform);

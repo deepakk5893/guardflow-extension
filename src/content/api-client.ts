@@ -13,6 +13,7 @@ import { storageGet, storageSet } from '../utils/storage';
 // ============== Types ==============
 
 export type PIITier = 'critical' | 'sensitive' | 'contextual';
+export type TierAction = 'block' | 'block_with_override' | 'warn' | 'audit';
 
 export interface PIIDetection {
   type: string;
@@ -26,6 +27,7 @@ export interface PIIDetection {
   confidence: number;
   line_number?: number;
   allow_override: boolean;
+  tier_action?: TierAction;
 }
 
 export interface RedactedSpan {
@@ -36,8 +38,15 @@ export interface RedactedSpan {
 
 export interface OverrideConfig {
   allow_override_tiers: PIITier[];
-  require_reason: boolean;
+  require_reason_tiers: PIITier[];
   has_overridable_detections: boolean;
+  predefined_reasons: string[];
+  tier_actions?: Record<PIITier, TierAction>;
+}
+
+export interface TokenInfo {
+  type: string;
+  preview: string;
 }
 
 export interface ScanMessageResponse {
@@ -46,6 +55,7 @@ export interface ScanMessageResponse {
   detections: PIIDetection[];
   redacted_text?: string;
   redacted_spans: RedactedSpan[];
+  token_map?: Record<string, TokenInfo>;
   summary: Record<string, any>;
   scan_time_ms: number;
   override_config?: OverrideConfig;
@@ -57,6 +67,7 @@ export interface ScanFileResponse {
   detections: PIIDetection[];
   redacted_document?: string;  // Base64 encoded redacted file
   extracted_text?: string;
+  token_map?: Record<string, TokenInfo>;
   summary: Record<string, any>;
   scan_time_ms: number;
   override_config?: OverrideConfig;
@@ -66,7 +77,8 @@ export interface LogOverrideRequest {
   pii_type: string;
   pii_tier: PIITier;
   detected_text_hash?: string;
-  reason?: string;
+  override_reason_category?: string;  // "false_detection", "test_data", "public_info", "other"
+  reason?: string;                     // Custom text when category is "other"
   platform: string;
   detection_source: 'text' | 'document';
 }

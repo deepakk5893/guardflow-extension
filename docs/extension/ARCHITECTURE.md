@@ -196,14 +196,36 @@ input.addEventListener('change', async (event) => {
 
 **Dialog Types:**
 1. **Scanning Overlay** - Shows "Scanning..." during server request
-2. **Enhanced Warning Dialog** - Shows detected violations with options
+2. **Enhanced Warning Dialog** - Tab-based compact modal with Redacted/Original views
+
+**4-Action Tier Model:** Each detection carries a `tier_action` field that controls dialog behavior:
+- **block**: Redacted tab only, no override allowed
+- **block_with_override**: Both tabs, override requires a reason
+- **warn**: Both tabs, override allowed freely
+- **audit**: No dialog shown (silent logging, filtered out before dialog)
+
+If ANY detection is `block`, the Original tab is hidden entirely. Mixed `block_with_override` + `warn` detections: both tabs shown, reason required.
+
+**Layout:** Fixed-height flex column (`max-height: 80vh`) with:
+- Fixed header (warning icon, inline detection badges, close button)
+- Tab bar (Redacted | Original) — shown only when overridable detections exist and no hard-block
+- Scrollable content area with two panels (one visible at a time)
+- Fixed button bar (primary button changes label/color per active tab)
+
+**Tab Content:**
+- **Redacted tab (default):** Redacted text preview, token legend, compact detection list
+- **Original tab:** Original text with PII highlighted inline (`<mark>` tags), compact detection list, reason chips
 
 **Dialog Actions:**
-- **Edit Message** - Returns focus to textarea, blocks submission
-- **Cancel** - Closes dialog, blocks submission
-- **Send Redacted** - Submits auto-redacted version (if available)
+- **Send Redacted Message** (green) - Primary button on Redacted tab
+- **Send Original Message** (red) - Primary button on Original tab (requires reason for `block_with_override` detections)
+- **Edit** - Returns focus to textarea, blocks submission
+- **Cancel / Close (X)** - Closes dialog, blocks submission
 
-**No "Send Anyway" option** - Violations are always blocked or redacted, regardless of user role.
+**Key Functions:**
+- `createEnhancedDialog()` - Main dialog builder with tab logic
+- `createHighlightedText()` - Highlights PII spans in original text using `detections[].start/end`
+- `createCompactDetectionList()` - Compact single-row detection items (dot + type + preview)
 
 ### 6. Enterprise Auth Module (`src/auth/enterprise-auth.ts`)
 
@@ -419,7 +441,7 @@ User Uploads File
 - Message text is hashed (SHA-256) before logging
 - Only first 32 chars of hash logged
 - Full text never persisted on backend
-- Redacted text replaces sensitive data with `[REDACTED_TYPE]`
+- Pseudonymized text replaces sensitive data with deterministic tokens (e.g., `xYzWqRsT-email`) — same PII value always produces the same token within a tenant, enabling LLMs to maintain entity relationships
 
 ## Extension Permissions
 

@@ -23,11 +23,14 @@ const BROWSER = typeof chrome !== 'undefined' && chrome.runtime?.getManifest() ?
  */
 async function sendHeartbeat(): Promise<void> {
   try {
-    const settings = await storageGet(['serverUrl', 'apiKey', 'stats']);
+    const settings = await storageGet(['serverUrl', 'apiKey', 'stats', 'serverConfig']);
 
     if (!settings.serverUrl || !settings.apiKey) {
       return; // Not configured, skip heartbeat
     }
+
+    // Send the extension's current site config version so the server can flag staleness
+    const currentConfigVersion = settings.serverConfig?.site_config_bundle?.config_version || null;
 
     const response = await fetch(`${settings.serverUrl}/api/v1/extension/heartbeat`, {
       method: 'POST',
@@ -41,6 +44,7 @@ async function sendHeartbeat(): Promise<void> {
         is_enabled: true,
         last_scan_timestamp: new Date().toISOString(),
         stats: settings.stats || {},
+        config_version: currentConfigVersion,
       }),
       signal: AbortSignal.timeout(5000), // 5s timeout for heartbeat
     });
@@ -50,6 +54,17 @@ async function sendHeartbeat(): Promise<void> {
       await storageSet({
         lastHeartbeat: { success: true, timestamp: Date.now() },
       });
+
+      // Check if server says we need to re-sync config (selector update)
+      try {
+        const data = await response.json();
+        if (data.force_config_update) {
+          console.log('[Niyantra] Server flagged config update, re-syncing...');
+          syncConfig();
+        }
+      } catch {
+        // JSON parse failure is non-fatal
+      }
     } else {
       console.warn('[Niyantra] Heartbeat failed:', response.status);
       await storageSet({
